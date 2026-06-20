@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>能力关系网 · 技能图谱</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+  <style>
+    /* === RESET & BASE === */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a12;
+      color: #e8e8f0;
+      user-select: none;
+    }
+
+    /* === GRAPH CONTAINER === */
+    #graph-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      background: radial-gradient(ellipse at 50% 40%, #14142a 0%, #0a0a12 70%);
+    }
+    #graph-container svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* === HEADER === */
+    .header {
+      position: absolute;
+      top: 24px;
+      left: 28px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .header .sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 400;
+      margin-top: 2px;
+      pointer-events: none;
+    }
+
+    /* === SEARCH BAR === */
+    .search-box {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      pointer-events: auto;
+    }
+    .search-box input {
+      width: 260px;
+      padding: 10px 16px 10px 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      color: #e8e8f0;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.25s;
+    }
+    .search-box input::placeholder { color: rgba(255,255,255,0.25); }
+    .search-box input:focus {
+      border-color: rgba(124, 109, 240, 0.4);
+      background: rgba(255,255,255,0.10);
+      box-shadow: 0 0 24px rgba(124, 109, 240, 0.12);
+    }
+    .search-box .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.2);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* === FILTER PILLS === */
+    .filters {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .filter-btn {
+      pointer-events: auto;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .filter-btn:hover {
+      background: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.8);
+    }
+    .filter-btn.active {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    .filter-btn .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+      margin-top: -1px;
+    }
+    .filter-btn .count {
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 0 6px;
+      font-size: 10px;
+      margin-left: 4px;
+      color: rgba(255,255,255,0.3);
+    }
+    .filter-btn.active .count { color: rgba(255,255,255,0.5); }
+
+    /* === LEGEND === */
+    .legend {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(16px);
+      padding: 10px 20px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .legend-item .swatch {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    /* === DETAIL PANEL === */
+    .detail-panel {
+      position: absolute;
+      right: -380px;
+      top: 0;
+      width: 360px;
+      height: 100vh;
+      z-index: 20;
+      background: rgba(16, 16, 28, 0.88);
+      backdrop-filter: blur(24px);
+      border-left: 1px solid rgba(255,255,255,0.06);
+      padding: 32px 28px;
+      transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      overflow-y: auto;
+      pointer-events: auto;
+    }
+    .detail-panel.open { right: 0; }
+    .detail-panel .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.4);
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .detail-panel .close-btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+    .panel-skill-name {
+      font-size: 26px;
+      font-weight: 700;
+      margin-top: 4px;
+      line-height: 1.2;
+    }
+    .panel-category-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+    .panel-level {
+      display: flex;
+      gap: 6px;
+      margin-top: 16px;
+      align-items: center;
+    }
+    .panel-level .stars {
+      display: flex;
+      gap: 3px;
+    }
+    .panel-level .stars span {
+      font-size: 16px;
+      color: rgba(255,255,255,0.12);
+    }
+    .panel-level .stars span.filled { color: #f0c040; }
+    .panel-level .level-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      margin-left: 4px;
+    }
+    .panel-desc {
+      margin-top: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.6);
+    }
+    .panel-connections {
+      margin-top: 24px;
+    }
+    .panel-connections h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .panel-connections .conn-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .panel-connections .conn-chip {
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .panel-connections .conn-chip:hover {
+      background: rgba(255,255,255,0.10);
+    }
+
+    /* === TOOLTIP === */
+    .tooltip {
+      position: absolute;
+      z-index: 15;
+      background: rgba(12, 12, 24, 0.92);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8e8f0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .tooltip.visible { opacity: 1; }
+    .tooltip .tt-cat {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.3);
+      margin-top: 2px;
+    }
+
+    /* === SCROLLBAR === */
+    .detail-panel::-webkit-scrollbar { width: 4px; }
+    .detail-panel::-webkit-scrollbar-track { background: transparent; }
+    .detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .header { top: 16px; left: 16px; }
+      .header h1 { font-size: 18px; }
+      .search-box { top: 16px; width: 140px; }
+      .search-box input { width: 100%; padding: 8px 12px 8px 32px; font-size: 12px; }
+      .search-box .search-icon { left: 11px; font-size: 12px; }
+      .filters { top: 64px; gap: 5px; }
+      .filter-btn { font-size: 11px; padding: 4px 10px; }
+      .detail-panel { width: 100%; right: -100%; padding: 24px 20px; }
+      .legend { padding: 8px 14px; gap: 10px; bottom: 16px; }
+      .legend-item { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip">
+    <div class="tt-name"></div>
+    <div class="tt-cat"></div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="detail-panel" id="detailPanel">
+    <button class="close-btn" id="panelClose">✕</button>
+    <div class="panel-category-tag" id="panelCatTag"></div>
+    <div class="panel-skill-name" id="panelName"></div>
+    <div class="panel-level">
+      <div class="stars" id="panelStars"></div>
+      <span class="level-label" id="panelLevelLabel"></span>
+    </div>
+    <div class="panel-desc" id="panelDesc"></div>
+    <div class="panel-connections">
+      <h3>关联技能</h3>
+      <div class="conn-list" id="panelConnections"></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>✦ 能力关系网</h1>
+    <div class="sub">技能图谱 · 知识脉络</div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-box">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="搜索技能..." autocomplete="off" />
+  </div>
+
+  <!-- Filters -->
+  <div class="filters" id="filters"></div>
+
+  <!-- Graph -->
+  <div id="graph-container">
+    <svg id="graph-svg"></svg>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend" id="legend"></div>
+
+  <script>
+    // ============================================================
+    // 1. DATA
+    // ============================================================
+
+    const CATEGORIES = [
+      { id: 'lang',       name: '编程语言',     color: '#ff6b6b' },
+      { id: 'frontend',   name: '前端开发',     color: '#4ecdc4' },
+      { id: 'backend',    name: '后端开发',     color: '#45b7d1' },
+      { id: 'datascience',name: '数据科学',     color: '#96ceb4' },
+      { id: 'ai',         name: 'AI / 深度学习',color: '#f0c040' },
+      { id: 'devops',     name: '工程效率',     color: '#c084fc' },
+      { id: 'design',     name: '设计',         color: '#f472b6' },
+      { id: 'soft',       name: '软技能',       color: '#fb923c' },
+    ];
+
+    const SKILLS = [
+      // 编程语言
+      { id: 'python',     name: 'Python',           cat: 'lang',       level: 5, desc: '主要编程语言，广泛应用于后端、数据科学和 AI 领域' },
+      { id: 'javascript', name: 'JavaScript / TS',  cat: 'lang',       level: 5, desc: '现代 Web 开发的核心语言，全栈能力基础' },
+      { id: 'go',         name: 'Go',               cat: 'lang',       level: 3, desc: '高性能后端语言，擅长并发编程' },
+      { id: 'java',       name: 'Java',             cat: 'lang',       level: 3, desc: '企业级应用开发语言' },
+      { id: 'sql',        name: 'SQL',              cat: 'lang',       level: 4, desc: '数据库查询与数据管理' },
+
+      // 前端开发
+      { id: 'react',      name: 'React',            cat: 'frontend',   level: 5, desc: '前端 UI 框架，组件化开发' },
+      { id: 'vue',        name: 'Vue.js',           cat: 'frontend',   level: 4, desc: '渐进式前端框架' },
+      { id: 'htmlcss',    name: 'HTML / CSS',       cat: 'frontend',   level: 5, desc: 'Web 基础技术栈' },
+      { id: 'tailwind',   name: 'TailwindCSS',      cat: 'frontend',   level: 4, desc: '实用优先的 CSS 框架' },
+      { id: 'd3',         name: 'D3.js',            cat: 'frontend',   level: 3, desc: '数据可视化库，擅长定制化图表' },
+
+      // 后端开发
+      { id: 'nodejs',     name: 'Node.js',          cat: 'backend',    level: 4, desc: 'JavaScript 运行时，构建后端服务' },
+      { id: 'django',     name: 'Django / FastAPI', cat: 'backend',    level: 4, desc: 'Python Web 框架，快速构建 API' },
+      { id: 'rest',       name: 'REST API',         cat: 'backend',    level: 5, desc: 'API 设计规范，前后端通信标准' },
+      { id: 'graphql',    name: 'GraphQL',          cat: 'backend',    level: 3, desc: '灵活的 API 查询语言' },
+
+      // 数据科学
+      { id: 'dataanalysis', name: '数据分析',       cat: 'datascience',level: 4, desc: '数据清洗、探索性分析与洞察提取' },
+      { id: 'pandas',     name: 'Pandas',           cat: 'datascience',level: 4, desc: 'Python 数据分析核心库' },
+      { id: 'dataviz',    name: '数据可视化',       cat: 'datascience',level: 4, desc: '将数据转化为直观的图表与仪表盘' },
+      { id: 'jupyter',    name: 'Jupyter',          cat: 'datascience',level: 3, desc: '交互式编程环境，适合数据探索' },
+
+      // AI / 深度学习
+      { id: 'ml',         name: '机器学习',         cat: 'ai',         level: 4, desc: '传统机器学习算法与模型训练' },
+      { id: 'pytorch',    name: 'PyTorch',          cat: 'ai',         level: 4, desc: '深度学习框架，灵活的动态计算图' },
+      { id: 'nlp',        name: 'NLP',              cat: 'ai',         level: 3, desc: '自然语言处理技术' },
+      { id: 'llm',        name: 'LLM',              cat: 'ai',         level: 4, desc: '大语言模型应用与微调' },
+
+      // 工程效率
+      { id: 'git',        name: 'Git',              cat: 'devops',     level: 5, desc: '版本控制与协作开发' },
+      { id: 'cicd',       name: 'CI / CD',          cat: 'devops',     level: 4, desc: '自动化构建、测试与部署流水线' },
+      { id: 'docker',     name: 'Docker',           cat: 'devops',     level: 4, desc: '容器化部署与开发环境管理' },
+      { id: 'arch',       name: '架构设计',         cat: 'devops',     level: 4, desc: '系统架构设计与技术选型' },
+      { id: 'codereview', name: '代码审查',         cat: 'devops',     level: 4, desc: '代码质量保证与知识分享' },
+
+      // 设计
+      { id: 'ui',         name: 'UI 设计',          cat: 'design',     level: 3, desc: '界面视觉设计' },
+      { id: 'ux',         name: '用户体验',         cat: 'design',     level: 4, desc: '用户研究与交互设计' },
+      { id: 'figma',      name: 'Figma',            cat: 'design',     level: 3, desc: '协作式 UI 设计工具' },
+
+      // 软技能
+      { id: 'teamwork',   name: '团队协作',         cat: 'soft',       level: 5, desc: '跨团队协作与沟通' },
+      { id: 'comm',       name: '沟通表达',         cat: 'soft',       level: 4, desc: '清晰表达技术方案与想法' },
+      { id: 'techwriting',name: '技术写作',         cat: 'soft',       level: 4, desc: '技术文档与博客撰写' },
+      { id: 'present',    name: '演讲分享',         cat: 'soft',       level: 3, desc: '技术分享与演讲表达' },
+      { id: 'pm',         name: '项目管理',         cat: 'soft',       level: 4, desc: '项目规划、进度管理与风险控制' },
+    ];
+
+    const EDGES = [
+      // 编程语言 → 框架/工具
+      { s: 'python', t: 'django' },
+      { s: 'python', t: 'pandas' },
+      { s: 'python', t: 'pytorch' },
+      { s: 'python', t: 'ml' },
+      { s: 'python', t: 'dataanalysis' },
+      { s: 'javascript', t: 'react' },
+      { s: 'javascript', t: 'vue' },
+      { s: 'javascript', t: 'nodejs' },
+      { s: 'javascript', t: 'htmlcss' },
+      { s: 'sql', t: 'dataanalysis' },
+      { s: 'go', t: 'arch' },
+
+      // 前端内部
+      { s: 'react', t: 'htmlcss' },
+      { s: 'react', t: 'tailwind' },
+      { s: 'react', t: 'd3' },
+      { s: 'vue', t: 'htmlcss' },
+      { s: 'vue', t: 'tailwind' },
+      { s: 'd3', t: 'dataviz' },
+      { s: 'htmlcss', t: 'ui' },
+
+      // 后端内部
+      { s: 'nodejs', t: 'rest' },
+      { s: 'nodejs', t: 'graphql' },
+      { s: 'nodejs', t: 'docker' },
+      { s: 'django', t: 'rest' },
+      { s: 'django', t: 'docker' },
+      { s: 'rest', t: 'graphql' },
+
+      // 数据科学
+      { s: 'dataanalysis', t: 'pandas' },
+      { s: 'dataanalysis', t: 'dataviz' },
+      { s: 'dataanalysis', t: 'jupyter' },
+      { s: 'dataanalysis', t: 'ml' },
+      { s: 'pandas', t: 'jupyter' },
+      { s: 'dataviz', t: 'd3' },
+
+      // AI
+      { s: 'ml', t: 'pytorch' },
+      { s: 'ml', t: 'nlp' },
+      { s: 'ml', t: 'dataanalysis' },
+      { s: 'pytorch', t: 'nlp' },
+      { s: 'pytorch', t: 'llm' },
+      { s: 'nlp', t: 'llm' },
+
+      // 工程效率
+      { s: 'git', t: 'cicd' },
+      { s: 'git', t: 'codereview' },
+      { s: 'docker', t: 'cicd' },
+      { s: 'docker', t: 'arch' },
+      { s: 'cicd', t: 'pm' },
+      { s: 'arch', t: 'pm' },
+      { s: 'codereview', t: 'teamwork' },
+
+      // 设计
+      { s: 'ui', t: 'figma' },
+      { s: 'ui', t: 'ux' },
+      { s: 'ux', t: 'figma' },
+      { s: 'ux', t: 'htmlcss' },
+
+      // 软技能
+      { s: 'teamwork', t: 'comm' },
+      { s: 'teamwork', t: 'pm' },
+      { s: 'comm', t: 'techwriting' },
+      { s: 'comm', t: 'present' },
+      { s: 'techwriting', t: 'present' },
+
+      // 跨域连接
+      { s: 'react', t: 'nodejs' },
+      { s: 'react', t: 'rest' },
+      { s: 'react', t: 'ui' },
+      { s: 'vue', t: 'rest' },
+      { s: 'nodejs', t: 'javascript' },
+      { s: 'django', t: 'python' },
+      { s: 'pm', t: 'arch' },
+      { s: 'pm', t: 'comm' },
+      { s: 'dataviz', t: 'ui' },
+      { s: 'llm', t: 'nlp' },
+      { s: 'llm', t: 'python' },
+    ];
+
+    // Build lookup maps
+    const skillMap = {};
+    SKILLS.forEach(s => skillMap[s.id] = s);
+    const catMap = {};
+    CATEGORIES.forEach(c => catMap[c.id] = c);
+
+    // ============================================================
+    // 2. SETUP D3
+    // ============================================================
+
+    const container = document.getElementById('graph-container');
+    const svg = d3.select('#graph-svg');
+    const $tooltip = d3.select('#tooltip');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Zoom behavior
+    const g = svg.append('g').attr('class', 'main-group');
+    const zoom = d3.zoom()
+      .scaleExtent([0.2, 4])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+    svg.call(zoom);
+
+    // Arrow marker for directed edges
+    svg.append('defs').selectAll('marker')
+      .data(['arrow'])
+      .join('marker')
+      .attr('id', d => d)
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 22)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('fill', 'rgba(255,255,255,0.15)')
+      .attr('d', 'M0,-5L10,0L0,5');
+
+    // Glow filter
+    const defs = svg.select('defs');
+    const filter = defs.append('filter').attr('id', 'glow');
+    filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
+    const merge = filter.append('feMerge');
+    merge.append('feMergeNode').attr('in', 'blur');
+    merge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // Larger glow for hover
+    const filterLg = defs.append('filter').attr('id', 'glow-lg');
+    filterLg.append('feGaussianBlur').attr('stdDeviation', '8').attr('result', 'blur');
+    const mergeLg = filterLg.append('feMerge');
+    mergeLg.append('feMergeNode').attr('in', 'blur');
+    mergeLg.append('feMergeNode').attr('in', 'SourceGraphic');
+
+    // ============================================================
+    // 3. PROCESS DATA FOR D3
+    // ============================================================
+
+    const nodes = SKILLS.map(s => ({
+      ...s,
+      r: 8 + s.level * 3.5,  // radius 11.5 ~ 25.5
+      color: catMap[s.cat].color,
+    }));
+
+    const links = EDGES.map(e => ({
+      source: e.s,
+      target: e.t,
+    }));
+
+    // Build adjacency for neighbor lookup
+    const adjacency = {};
+    nodes.forEach(n => adjacency[n.id] = new Set());
+    links.forEach(l => {
+      const sid = typeof l.source === 'object' ? l.source.id : l.source;
+      const tid = typeof l.target === 'object' ? l.target.id : l.target;
+      adjacency[sid].add(tid);
+      adjacency[tid].add(sid);
+    });
+
+    // ============================================================
+    // 4. FORCE SIMULATION
+    // ============================================================
+
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(d => {
+        // Connected skills within same category are closer
+        const s = typeof d.source === 'object' ? d.source : d.source;
+        const t = typeof d.target === 'object' ? d.target : d.target;
+        const sCat = skillMap[s.id]?.cat;
+        const tCat = skillMap[t.id]?.cat;
+        return sCat === tCat ? 70 : 110;
+      }).strength(0.5))
+      .force('charge', d3.forceManyBody().strength(d => -d.r * 14))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(d => d.r + 8).strength(0.7))
+      .alphaDecay(0.025)
+      .on('tick', ticked);
+
+    // ============================================================
+    // 5. DRAW
+    // ============================================================
+
+    // Edges
+    const linkGroup = g.append('g').attr('class', 'links');
+    const link = linkGroup.selectAll('line')
+      .data(links)
+      .join('line')
+      .attr('stroke', 'rgba(255,255,255,0.08)')
+      .attr('stroke-width', 1.2)
+      .attr('stroke-linecap', 'round');
+
+    // Nodes group
+    const nodeGroup = g.append('g').attr('class', 'nodes');
+
+    const node = nodeGroup.selectAll('g')
+      .data(nodes)
+      .join('g')
+      .attr('class', 'node-group')
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded)
+      );
+
+    // Node circle
+    node.append('circle')
+      .attr('r', d => d.r)
+      .attr('fill', d => d.color)
+      .attr('stroke', d => d.color)
+      .attr('stroke-width', 1)
+      .attr('stroke-opacity', 0.3)
+      .attr('filter', 'url(#glow)')
+      .style('cursor', 'pointer')
+      .style('transition', 'stroke-width 0.2s, stroke-opacity 0.2s');
+
+    // Inner highlight ring (visible on hover)
+    node.append('circle')
+      .attr('class', 'inner-ring')
+      .attr('r', d => d.r + 3)
+      .attr('fill', 'none')
+      .attr('stroke', d => d.color)
+      .attr('stroke-width', 0)
+      .attr('stroke-opacity', 0)
+      .style('transition', 'stroke-width 0.25s, stroke-opacity 0.25s')
+      .style('pointer-events', 'none');
+
+    // Label
+    node.append('text')
+      .text(d => d.name)
+      .attr('dy', d => d.r + 15)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'rgba(255,255,255,0.55)')
+      .attr('font-size', '10px')
+      .attr('font-weight', '500')
+      .attr('font-family', 'Inter, sans-serif')
+      .style('pointer-events', 'none')
+      .style('transition', 'fill 0.2s');
+
+    // ============================================================
+    // 6. INTERACTIONS
+    // ============================================================
+
+    let selectedNodeId = null;
+
+    function getNeighborIds(id) {
+      return adjacency[id] || new Set();
+    }
+
+    function highlightNode(id) {
+      selectedNodeId = id;
+      const neighborIds = getNeighborIds(id);
+      neighborIds.add(id);
+
+      node.each(function(d) {
+        const isActive = neighborIds.has(d.id);
+        const isCenter = d.id === id;
+        const circle = d3.select(this).select('circle');
+        const text = d3.select(this).select('text');
+        const ring = d3.select(this).select('.inner-ring');
+
+        circle
+          .attr('stroke-width', isCenter ? 3 : isActive ? 2 : 0)
+          .attr('stroke-opacity', isActive ? 0.6 : 0)
+          .transition().duration(300)
+          .attr('fill-opacity', isActive ? 1 : 0.1);
+
+        text
+          .transition().duration(300)
+          .attr('fill', isActive ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)');
+
+        ring
+          .attr('stroke-width', isCenter ? 5 : 0)
+          .attr('stroke-opacity', isCenter ? 0.35 : 0);
+
+        if (isCenter) {
+          circle.attr('filter', 'url(#glow-lg)');
+        } else {
+          circle.attr('filter', isActive ? 'url(#glow)' : null);
+        }
+      });
+
+      link.each(function(d) {
+        const sid = typeof d.source === 'object' ? d.source.id : d.source;
+        const tid = typeof d.target === 'object' ? d.target.id : d.target;
+        const isConnected = (sid === id || tid === id);
+        d3.select(this)
+          .transition().duration(300)
+          .attr('stroke', isConnected ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.03)')
+          .attr('stroke-width', isConnected ? 2 : 0.5);
+      });
+    }
+
+    function clearHighlight() {
+      selectedNodeId = null;
+      node.each(function(d) {
+        const circle = d3.select(this).select('circle');
+        const text = d3.select(this).select('text');
+        const ring = d3.select(this).select('.inner-ring');
+
+        circle
+          .attr('filter', 'url(#glow)')
+          .attr('stroke-width', 1)
+          .attr('stroke-opacity', 0.3)
+          .attr('fill-opacity', 1);
+
+        text.attr('fill', 'rgba(255,255,255,0.55)');
+
+        ring.attr('stroke-width', 0).attr('stroke-opacity', 0);
+      });
+      link
+        .attr('stroke', 'rgba(255,255,255,0.08)')
+        .attr('stroke-width', 1.2);
+      closePanel();
+    }
+
+    // Clear on background click
+    svg.on('click', (event) => {
+      if (event.target === svg.node()) {
+        clearHighlight();
+      }
+    });
+
+    // Node events
+    node.on('mouseenter', function(event, d) {
+      if (selectedNodeId) return; // don't show tooltip if a node is selected
+      $tooltip.select('.tt-name').text(d.name);
+      $tooltip.select('.tt-cat').text(catMap[d.cat]?.name || '');
+      $tooltip
+        .classed('visible', true)
+        .style('left', (event.offsetX + 14) + 'px')
+        .style('top', (event.offsetY - 10) + 'px');
+
+      if (!selectedNodeId) {
+        d3.select(this).select('circle')
+          .attr('filter', 'url(#glow-lg)')
+          .attr('stroke-width', 2.5)
+          .attr('stroke-opacity', 0.5);
+        d3.select(this).select('.inner-ring')
+          .attr('stroke-width', 4)
+          .attr('stroke-opacity', 0.3);
+        d3.select(this).select('text')
+          .attr('fill', 'rgba(255,255,255,0.9)');
+      }
+    });
+
+    node.on('mousemove', function(event) {
+      if (selectedNodeId) return;
+      $tooltip
+        .style('left', (event.offsetX + 14) + 'px')
+        .style('top', (event.offsetY - 10) + 'px');
+    });
+
+    node.on('mouseleave', function(event, d) {
+      $tooltip.classed('visible', false);
+      if (!selectedNodeId) {
+        d3.select(this).select('circle')
+          .attr('filter', 'url(#glow)')
+          .attr('stroke-width', 1)
+          .attr('stroke-opacity', 0.3);
+        d3.select(this).select('.inner-ring')
+          .attr('stroke-width', 0)
+          .attr('stroke-opacity', 0);
+        d3.select(this).select('text')
+          .attr('fill', 'rgba(255,255,255,0.55)');
+      }
+    });
+
+    node.on('click', function(event, d) {
+      event.stopPropagation();
+      if (selectedNodeId === d.id) {
+        clearHighlight();
+        return;
+      }
+      highlightNode(d.id);
+      showPanel(d);
+    });
+
+    // ============================================================
+    // 7. DETAIL PANEL
+    // ============================================================
+
+    const panel = document.getElementById('detailPanel');
+    const panelName = document.getElementById('panelName');
+    const panelCatTag = document.getElementById('panelCatTag');
+    const panelStars = document.getElementById('panelStars');
+    const panelLevelLabel = document.getElementById('panelLevelLabel');
+    const panelDesc = document.getElementById('panelDesc');
+    const panelConn = document.getElementById('panelConnections');
+    const panelClose = document.getElementById('panelClose');
+
+    panelClose.addEventListener('click', clearHighlight);
+
+    function showPanel(d) {
+      const cat = catMap[d.cat];
+      panelCatTag.textContent = cat.name;
+      panelCatTag.style.background = cat.color + '22';
+      panelCatTag.style.color = cat.color;
+      panelName.textContent = d.name;
+
+      // Stars
+      panelStars.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const span = document.createElement('span');
+        span.textContent = '★';
+        if (i < d.level) span.classList.add('filled');
+        panelStars.appendChild(span);
+      }
+      const levelNames = ['', '入门', '初阶', '进阶', '熟练', '精通'];
+      panelLevelLabel.textContent = levelNames[d.level] || '';
+
+      panelDesc.textContent = d.desc;
+
+      // Connections
+      panelConn.innerHTML = '';
+      const neighborIds = getNeighborIds(d.id);
+      const neighbors = [];
+      neighborIds.forEach(nid => {
+        if (nid !== d.id && skillMap[nid]) neighbors.push(skillMap[nid]);
+      });
+      // Sort by level desc
+      neighbors.sort((a, b) => b.level - a.level);
+
+      neighbors.forEach(n => {
+        const chip = document.createElement('span');
+        chip.className = 'conn-chip';
+        chip.style.borderLeftColor = catMap[n.cat]?.color || 'rgba(255,255,255,0.1)';
+        chip.style.borderLeft = '3px solid ' + (catMap[n.cat]?.color || 'rgba(255,255,255,0.1)');
+        chip.textContent = n.name;
+        chip.addEventListener('click', () => {
+          const targetNode = nodes.find(nd => nd.id === n.id);
+          if (targetNode) {
+            highlightNode(n.id);
+            showPanel(targetNode);
+          }
+        });
+        panelConn.appendChild(chip);
+      });
+
+      panel.classList.add('open');
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+    }
+
+    // ============================================================
+    // 8. FILTERS
+    // ============================================================
+
+    let activeFilter = null;
+
+    function buildFilters() {
+      const container = document.getElementById('filters');
+
+      // "全部" button
+      const allBtn = document.createElement('button');
+      allBtn.className = 'filter-btn active';
+      allBtn.innerHTML = '全部';
+      allBtn.dataset.cat = 'all';
+      allBtn.addEventListener('click', () => setFilter('all'));
+      container.appendChild(allBtn);
+
+      CATEGORIES.forEach(c => {
+        const count = SKILLS.filter(s => s.cat === c.id).length;
+        const btn = document.createElement('button');
+        btn.className = 'filter-btn';
+        btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.name}<span class="count">${count}</span>`;
+        btn.dataset.cat = c.id;
+        btn.addEventListener('click', () => setFilter(c.id));
+        container.appendChild(btn);
+      });
+    }
+
+    function setFilter(catId) {
+      activeFilter = catId;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.cat === catId);
+      });
+
+      if (selectedNodeId) clearHighlight();
+
+      node.each(function(d) {
+        const visible = catId === 'all' || d.cat === catId;
+        const gEl = d3.select(this);
+        gEl.style('display', visible ? null : 'none');
+      });
+
+      link.each(function(d) {
+        const sid = typeof d.source === 'object' ? d.source.id : d.source;
+        const tid = typeof d.target === 'object' ? d.target.id : d.target;
+        const sVisible = catId === 'all' || (skillMap[sid]?.cat === catId);
+        const tVisible = catId === 'all' || (skillMap[tid]?.cat === catId);
+        const visible = sVisible && tVisible;
+        d3.select(this).style('display', visible ? null : 'none');
+      });
+
+      // Reheat simulation to re-layout
+      simulation.alpha(0.3).restart();
+    }
+
+    // ============================================================
+    // 9. SEARCH
+    // ============================================================
+
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout = null;
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        const q = searchInput.value.trim().toLowerCase();
+        if (!q) {
+          node.style('opacity', 1);
+          link.style('opacity', 1);
+          return;
+        }
+        node.each(function(d) {
+          const match = d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q);
+          d3.select(this).style('opacity', match ? 1 : 0.12);
+        });
+        link.style('opacity', 0.08);
+      }, 200);
+    });
+
+    // ============================================================
+    // 10. TICK
+    // ============================================================
+
+    function ticked() {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    }
+
+    // ============================================================
+    // 11. DRAG
+    // ============================================================
+
+    function dragStarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragEnded(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    // ============================================================
+    // 12. BUILD UI
+    // ============================================================
+
+    buildFilters();
+
+    // Legend
+    const legendContainer = document.getElementById('legend');
+    CATEGORIES.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = `<span class="swatch" style="background:${c.color}"></span>${c.name}`;
+      legendContainer.appendChild(item);
+    });
+
+    // ============================================================
+    // 13. RESIZE HANDLER
+    // ============================================================
+
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      svg.attr('width', w).attr('height', h);
+      simulation.force('center', d3.forceCenter(w / 2, h / 2));
+      simulation.alpha(0.3).restart();
+    });
+
+    // Force initial center
+    simulation.force('center', d3.forceCenter(width / 2, height / 2));
+
+    // Start with a little kick
+    setTimeout(() => {
+      simulation.alpha(0.5).restart();
+    }, 100);
+
+    console.log('✦ 能力关系网 loaded —', nodes.length, 'skills,', links.length, 'connections');
+  </script>
+</body>
+</html>
