@@ -2085,6 +2085,61 @@
       font-size: 13px;
     }
 
+    /* === HOUSING REFERENCE === */
+    .finance-section-label.housing {
+      color: rgba(124,109,240,0.5);
+      border-top: 1px solid rgba(255,255,255,0.04);
+      margin-top: 8px;
+      padding-top: 20px;
+    }
+    .housing-ref-list { display: flex; flex-direction: column; gap: 6px; }
+    .housing-item {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 12px 16px;
+      transition: all 0.15s;
+    }
+    .housing-item:hover { background: rgba(255,255,255,0.02); }
+    .housing-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .housing-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.65);
+    }
+    .housing-del {
+      background: none; border: none;
+      color: rgba(255,255,255,0.08);
+      font-size: 13px; cursor: pointer;
+      padding: 2px 6px; border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .housing-del:hover { color: #ff6b6b; background: rgba(255,107,107,0.1); }
+    .housing-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .housing-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .housing-tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(124,109,240,0.1);
+      color: rgba(124,109,240,0.6);
+    }
+    .housing-empty {
+      text-align: center;
+      padding: 24px;
+      color: rgba(255,255,255,0.08);
+      font-size: 12px;
+    }
+
     /* Finance modal */
     .finance-modal {
       position: fixed; inset: 0; z-index: 10000;

@@ -1389,16 +1389,6 @@
     function loadFinance() { try { return JSON.parse(localStorage.getItem(FINANCE_KEY)) || []; } catch { return []; } }
     function saveFinance(data) { localStorage.setItem(FINANCE_KEY, JSON.stringify(data)); }
 
-    // Seed default entries on first visit
-    (function seedFinance() {
-      const existing = localStorage.getItem(FINANCE_KEY);
-      if (existing) return;
-      const defaults = [
-        { id: Date.now() + 1, cat: 'rent', amount: 5556, note: 'SSB共享卫浴 · Village Apartments / Rye Hall 全年住宿 (€5556)', date: '2026-09-01' },
-      ];
-      saveFinance(defaults);
-    })();
-
     function renderFinance() {
       const list = document.getElementById('financeList');
       const monthTotal = document.getElementById('financeMonthTotal');
@@ -1457,7 +1447,53 @@
       const records = loadFinance();
       records.push({ id: Date.now(), cat, amount, note, date });
       saveFinance(records);
-      renderFinance();
+    renderFinance();
+
+    // ============================================================
+    // HOUSING REFERENCE
+    // ============================================================
+    const HOUSING_KEY = 'km_housing_refs';
+
+    function loadHousing() { try { return JSON.parse(localStorage.getItem(HOUSING_KEY)) || []; } catch { return []; } }
+    function saveHousing(data) { localStorage.setItem(HOUSING_KEY, JSON.stringify(data)); }
+
+    // Seed default entries on first visit
+    !localStorage.getItem(HOUSING_KEY) && saveHousing([
+      { id: Date.now() + 1, name: 'SSB 共享卫浴 (Shared Bathroom)', desc: 'Village Apartments / Rye Hall · 全年 €5556 · 申请时直接选 SSB', tags: ['校内', '共享卫浴'] },
+    ]);
+
+    function renderHousing() {
+      const list = document.getElementById('housingRefList');
+      if (!list) return;
+      const data = loadHousing();
+      if (data.length === 0) {
+        list.innerHTML = '<div class="housing-empty">暂无记录</div>';
+        return;
+      }
+      list.innerHTML = data.map(item => `
+        <div class="housing-item">
+          <div class="housing-item-top">
+            <span class="housing-name">${item.name}</span>
+            <button class="housing-del" data-id="${item.id}">✕</button>
+          </div>
+          <div class="housing-desc">${item.desc}</div>
+          <div class="housing-tags">${(item.tags || []).map(t => `<span class="housing-tag">${t}</span>`).join('')}</div>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.housing-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          let data = loadHousing();
+          data = data.filter(d => d.id !== id);
+          saveHousing(data);
+          renderHousing();
+        });
+      });
+    }
+
+    renderHousing();
+  
       finModal?.classList.remove('open');
     });
     // Close on backdrop click
