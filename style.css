@@ -2125,6 +2125,15 @@
       margin-top: 4px;
       line-height: 1.5;
     }
+    .housing-link {
+      display: inline-block;
+      font-size: 11px;
+      color: rgba(124,109,240,0.7);
+      text-decoration: none;
+      margin-top: 6px;
+      transition: color 0.2s;
+    }
+    .housing-link:hover { color: rgba(124,109,240,1); text-decoration: underline; }
     .housing-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
     .housing-tag {
       font-size: 10px;

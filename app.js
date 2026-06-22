@@ -1460,6 +1460,7 @@
     // Seed default entries on first visit
     !localStorage.getItem(HOUSING_KEY) && saveHousing([
       { id: Date.now() + 1, name: 'SSB 共享卫浴 (Shared Bathroom)', desc: 'Village Apartments / Rye Hall · 全年 €5556 · 申请时直接选 SSB', tags: ['校内', '共享卫浴'] },
+      { id: Date.now() + 2, name: '梅努斯大学学校宿舍', desc: 'Maynooth University 校内宿舍总览', url: 'https://www.maynoothuniversity.ie/student-residences/rooms', tags: ['校内', '梅努斯'] },
     ]);
 
     function renderHousing() {
@@ -1477,6 +1478,7 @@
             <button class="housing-del" data-id="${item.id}">✕</button>
           </div>
           <div class="housing-desc">${item.desc}</div>
+          ${item.url ? `<a class="housing-link" href="${item.url}" target="_blank" rel="noopener">🔗 查看详情</a>` : ''}
           <div class="housing-tags">${(item.tags || []).map(t => `<span class="housing-tag">${t}</span>`).join('')}</div>
         </div>
       `).join('');
