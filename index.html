@@ -4,1545 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KM · 空门</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta name="description" content="KM · 空门 — 个人数字中枢：技能图谱、每日追踪、财务账单、食谱健康、论文清单" />
+  <meta property="og:title" content="KM · 空门" />
+  <meta property="og:description" content="个人数字中枢：技能图谱、每日追踪、财务账单、食谱健康、论文清单" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://runningshark.github.io/skill-graph" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗝️</text></svg>" />
+  <link rel="manifest" href="manifest.json" />
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-  <style>
-    /* === RESET & BASE === */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0a0a12;
-      color: #e8e8f0;
-      user-select: none;
-      overflow: hidden;
-    }
-
-    /* === NAV === */
-    .nav-bar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 52px;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      background: rgba(10,10,18,0.80);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .nav-tab {
-      padding: 8px 28px;
-      border-radius: 10px;
-      border: none;
-      background: transparent;
-      color: rgba(255,255,255,0.3);
-      font-size: 14px;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      letter-spacing: 0.2px;
-    }
-    .nav-tab:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.04); }
-    .nav-tab.active {
-      color: #fff;
-      background: rgba(255,255,255,0.08);
-    }
-    .nav-tab .tab-icon { margin-right: 6px; }
-
-    /* === PAGE SYSTEM === */
-    .page {
-      display: none;
-      width: 100%;
-    }
-    .page.active { display: block; }
-    #page-graph {
-      height: 100vh;
-      position: relative;
-    }
-    #page-resume {
-      min-height: 100vh;
-      overflow-y: auto;
-      padding: 72px 24px 40px;
-    }
-
-    /* === GRAPH PAGE === */
-    #graph-container {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      background: radial-gradient(ellipse at 50% 40%, #14142a 0%, #0a0a12 70%);
-    }
-    #graph-container svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    .graph-header {
-      position: absolute;
-      top: 68px;
-      left: 28px;
-      z-index: 10;
-      pointer-events: none;
-    }
-    .graph-header h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.2;
-    }
-    .graph-header .sub {
-      font-size: 13px;
-      color: rgba(255,255,255,0.35);
-      font-weight: 400;
-      margin-top: 2px;
-      pointer-events: none;
-    }
-
-    .search-box {
-      position: absolute;
-      top: 68px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      pointer-events: auto;
-    }
-    .search-box input {
-      width: 260px;
-      padding: 10px 16px 10px 38px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.06);
-      backdrop-filter: blur(12px);
-      color: #e8e8f0;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.25s;
-    }
-    .search-box input::placeholder { color: rgba(255,255,255,0.25); }
-    .search-box input:focus {
-      border-color: rgba(124, 109, 240, 0.4);
-      background: rgba(255,255,255,0.10);
-      box-shadow: 0 0 24px rgba(124, 109, 240, 0.12);
-    }
-    .search-box .search-icon {
-      position: absolute;
-      left: 13px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: rgba(255,255,255,0.2);
-      font-size: 14px;
-      pointer-events: none;
-    }
-
-    .filters {
-      position: absolute;
-      top: 124px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .filter-btn {
-      pointer-events: auto;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      backdrop-filter: blur(8px);
-      color: rgba(255,255,255,0.5);
-      font-size: 12px;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-    .filter-btn:hover { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.8); }
-    .filter-btn.active { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); color: #fff; }
-    .filter-btn .dot {
-      display: inline-block; width: 7px; height: 7px;
-      border-radius: 50%; margin-right: 6px;
-      vertical-align: middle; margin-top: -1px;
-    }
-    .filter-btn .count {
-      display: inline-block; background: rgba(255,255,255,0.06);
-      border-radius: 10px; padding: 0 6px; font-size: 10px;
-      margin-left: 4px; color: rgba(255,255,255,0.3);
-    }
-    .filter-btn.active .count { color: rgba(255,255,255,0.5); }
-
-    .legend {
-      position: absolute;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      justify-content: center;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(16px);
-      padding: 10px 20px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.06);
-      pointer-events: none;
-    }
-    .legend-item {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500;
-      pointer-events: none;
-    }
-    .legend-item .swatch {
-      width: 10px; height: 10px; border-radius: 50%;
-      flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .detail-panel {
-      position: absolute; right: -380px; top: 0;
-      width: 360px; height: 100vh; z-index: 20;
-      background: rgba(16, 16, 28, 0.88);
-      backdrop-filter: blur(24px);
-      border-left: 1px solid rgba(255,255,255,0.06);
-      padding: 32px 28px;
-      transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-      overflow-y: auto; pointer-events: auto;
-    }
-    .detail-panel.open { right: 0; }
-    .detail-panel .close-btn {
-      position: absolute; top: 20px; right: 20px;
-      width: 32px; height: 32px; border-radius: 50%;
-      border: none; background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.4); font-size: 16px;
-      cursor: pointer; transition: all 0.2s;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .detail-panel .close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
-    .panel-skill-name { font-size: 26px; font-weight: 700; margin-top: 4px; line-height: 1.2; }
-    .panel-category-tag {
-      display: inline-block; padding: 3px 10px; border-radius: 6px;
-      font-size: 11px; font-weight: 600; margin-top: 12px;
-    }
-    .panel-level { display: flex; gap: 6px; margin-top: 16px; align-items: center; }
-    .panel-level .stars { display: flex; gap: 3px; }
-    .panel-level .stars span { font-size: 16px; color: rgba(255,255,255,0.12); }
-    .panel-level .stars span.filled { color: #f0c040; }
-    .panel-level .level-label { font-size: 12px; color: rgba(255,255,255,0.3); margin-left: 4px; }
-    .panel-desc { margin-top: 16px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.6); }
-    .panel-connections { margin-top: 24px; }
-    .panel-connections h3 { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-    .panel-connections .conn-list { display: flex; flex-wrap: wrap; gap: 8px; }
-    .panel-connections .conn-chip {
-      padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06);
-      cursor: pointer; transition: all 0.2s;
-    }
-    .panel-connections .conn-chip:hover { background: rgba(255,255,255,0.10); }
-
-    .tooltip {
-      position: absolute; z-index: 15;
-      background: rgba(12, 12, 24, 0.92);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px; padding: 8px 14px;
-      font-size: 13px; font-weight: 500; color: #e8e8f0;
-      pointer-events: none; opacity: 0;
-      transition: opacity 0.15s; white-space: nowrap;
-    }
-    .tooltip.visible { opacity: 1; }
-    .tooltip .tt-cat { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.3); margin-top: 2px; }
-
-    .detail-panel::-webkit-scrollbar { width: 4px; }
-    .detail-panel::-webkit-scrollbar-track { background: transparent; }
-    .detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-
-    /* ================================================================
-       RESUME PAGE
-    ================================================================ */
-    #page-resume { background: #0a0a12; }
-    #page-resume ::-webkit-scrollbar { width: 6px; }
-    #page-resume ::-webkit-scrollbar-track { background: transparent; }
-    #page-resume ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-
-    .resume-container {
-      max-width: 820px;
-      margin: 0 auto;
-    }
-
-    /* Resume Header */
-    .resume-header {
-      text-align: center;
-      padding: 40px 0 32px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .resume-avatar {
-      width: 88px; height: 88px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #7c6df0, #4ecdc4);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px;
-      font-size: 32px; font-weight: 700; color: #fff;
-    }
-    .resume-name { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
-    .resume-title {
-      font-size: 16px; color: rgba(255,255,255,0.5); font-weight: 400;
-      margin-top: 6px;
-    }
-    .resume-contact {
-      display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
-      margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.35);
-    }
-    .resume-contact span { display: flex; align-items: center; gap: 6px; }
-    .resume-contact .emoji { font-size: 14px; }
-
-    /* Resume Sections */
-    .resume-section { margin-top: 36px; }
-    .resume-section-title {
-      font-size: 14px; font-weight: 600;
-      color: rgba(255,255,255,0.25);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 16px;
-      display: flex; align-items: center; gap: 12px;
-    }
-    .resume-section-title::after {
-      content: '';
-      flex: 1; height: 1px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    /* Summary */
-    .resume-summary {
-      font-size: 14px; line-height: 1.8;
-      color: rgba(255,255,255,0.55);
-      padding: 20px 24px;
-      background: rgba(255,255,255,0.02);
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-
-    /* Experience */
-    .exp-item {
-      padding: 20px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    .exp-item:last-child { border-bottom: none; }
-    .exp-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      gap: 16px; flex-wrap: wrap;
-    }
-    .exp-company {
-      font-size: 17px; font-weight: 600; color: #e8e8f0;
-    }
-    .exp-company .exp-role {
-      font-weight: 400; color: rgba(255,255,255,0.45); font-size: 14px;
-    }
-    .exp-date {
-      font-size: 12px; color: rgba(255,255,255,0.25);
-      padding: 3px 10px; border-radius: 6px;
-      background: rgba(255,255,255,0.04);
-      white-space: nowrap;
-    }
-    .exp-desc {
-      margin-top: 10px;
-      font-size: 13.5px; line-height: 1.7;
-      color: rgba(255,255,255,0.45);
-    }
-    .exp-desc ul { list-style: none; padding: 0; }
-    .exp-desc ul li {
-      position: relative;
-      padding-left: 16px;
-      margin-bottom: 5px;
-    }
-    .exp-desc ul li::before {
-      content: '·';
-      position: absolute; left: 2px;
-      color: rgba(255,255,255,0.2);
-    }
-    .exp-tags {
-      display: flex; gap: 6px; flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .exp-tag {
-      padding: 2px 10px; border-radius: 5px;
-      font-size: 11px; font-weight: 500;
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.3);
-    }
-
-    /* Education */
-    .edu-item {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      gap: 16px; flex-wrap: wrap;
-      padding: 16px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    .edu-item:last-child { border-bottom: none; }
-    .edu-school { font-size: 16px; font-weight: 600; }
-    .edu-major { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 2px; }
-    .edu-date { font-size: 12px; color: rgba(255,255,255,0.25); padding: 3px 10px; border-radius: 6px; background: rgba(255,255,255,0.04); white-space: nowrap; }
-
-    /* Skills Grid */
-    .skills-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 8px;
-    }
-    .skill-card {
-      padding: 10px 14px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .skill-card-name { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.7); }
-    .skill-card-level { display: flex; gap: 2px; }
-    .skill-card-level span { font-size: 11px; color: rgba(255,255,255,0.1); }
-    .skill-card-level span.filled { color: #f0c040; }
-
-    /* Projects */
-    .proj-item {
-      padding: 20px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-    .proj-item:last-child { border-bottom: none; }
-    .proj-name { font-size: 16px; font-weight: 600; }
-    .proj-desc { font-size: 13.5px; line-height: 1.7; color: rgba(255,255,255,0.45); margin-top: 6px; }
-
-    /* Certifications / Languages */
-    .cert-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-    }
-    .cert-item {
-      padding: 12px 16px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-    .cert-name { font-size: 13px; font-weight: 500; }
-    .cert-org { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; }
-
-    /* === HOME PAGE === */
-    #page-home {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: radial-gradient(ellipse at 50% 30%, #14142a 0%, #0a0a12 70%);
-    }
-    .home-container {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .home-hero {
-      text-align: center;
-      margin: 40px 0 60px;
-    }
-    .home-hero .logo {
-      font-size: 56px;
-      margin-bottom: 16px;
-      display: block;
-    }
-    .home-hero h1 {
-      font-size: 38px;
-      font-weight: 700;
-      letter-spacing: -1px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.2;
-    }
-    .home-hero .subtitle {
-      font-size: 16px;
-      color: rgba(255,255,255,0.35);
-      margin-top: 12px;
-      font-weight: 400;
-      line-height: 1.6;
-    }
-    .home-cards {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      width: 100%;
-      max-width: 720px;
-    }
-    @media (max-width: 700px) {
-      .home-cards { grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 450px) {
-      .home-cards { grid-template-columns: 1fr; }
-    }
-    .home-card {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 32px 28px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-align: center;
-    }
-    .home-card:hover {
-      background: rgba(255,255,255,0.06);
-      border-color: rgba(255,255,255,0.12);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-    }
-    .home-card .card-icon {
-      font-size: 36px;
-      margin-bottom: 14px;
-      display: block;
-    }
-    .home-card .card-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #e8e8f0;
-    }
-    .home-card .card-desc {
-      font-size: 13px;
-      color: rgba(255,255,255,0.35);
-      margin-top: 8px;
-      line-height: 1.6;
-    }
-    .home-card .card-action {
-      display: inline-block;
-      margin-top: 16px;
-      padding: 8px 24px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.5);
-      transition: all 0.25s;
-    }
-    .home-card:hover .card-action {
-      background: rgba(255,255,255,0.10);
-      color: #e8e8f0;
-    }
-    .home-footer {
-      margin-top: 80px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.15);
-      text-align: center;
-    }
-
-    /* === CAREER PAGE === */
-    #page-career {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: #0a0a12;
-    }
-    .career-container {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .career-container h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 6px;
-    }
-    .career-container .sub {
-      font-size: 13px;
-      color: rgba(255,255,255,0.3);
-      margin-bottom: 36px;
-    }
-    .career-timeline {
-      position: relative;
-      padding-left: 32px;
-    }
-    .career-timeline::before {
-      content: '';
-      position: absolute;
-      left: 10px;
-      top: 8px;
-      bottom: 8px;
-      width: 2px;
-      background: rgba(255,255,255,0.06);
-    }
-    .career-entry {
-      position: relative;
-      margin-bottom: 28px;
-      padding: 20px 24px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.015);
-      border: 1px solid rgba(255,255,255,0.04);
-      transition: all 0.2s;
-    }
-    .career-entry:hover {
-      background: rgba(255,255,255,0.025);
-      border-color: rgba(255,255,255,0.07);
-    }
-    .career-entry::before {
-      content: '';
-      position: absolute;
-      left: -26px;
-      top: 26px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.06);
-      border: 2px solid rgba(255,255,255,0.08);
-    }
-    .career-entry.current::before {
-      background: #4ecdc4;
-      border-color: #4ecdc4;
-      box-shadow: 0 0 16px rgba(78,205,196,0.3);
-    }
-    .career-entry .entry-period {
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.2);
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
-    }
-    .career-entry .entry-role {
-      font-size: 17px;
-      font-weight: 600;
-      color: #e8e8f0;
-    }
-    .career-entry .entry-company {
-      font-size: 13px;
-      color: rgba(255,255,255,0.35);
-      margin-top: 2px;
-    }
-    .career-entry .entry-desc {
-      font-size: 13px;
-      line-height: 1.7;
-      color: rgba(255,255,255,0.4);
-      margin-top: 10px;
-    }
-    .career-entry .entry-desc ul {
-      list-style: none;
-      padding: 0;
-    }
-    .career-entry .entry-desc ul li {
-      position: relative;
-      padding-left: 14px;
-      margin-bottom: 4px;
-    }
-    .career-entry .entry-desc ul li::before {
-      content: '·';
-      position: absolute; left: 2px;
-      color: rgba(255,255,255,0.15);
-    }
-    .career-entry .entry-tags {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .career-entry .entry-tags span {
-      padding: 2px 10px;
-      border-radius: 5px;
-      font-size: 11px;
-      font-weight: 500;
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.25);
-    }
-
-    /* === ABOUT PAGE === */
-    #page-about {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: #0a0a12;
-    }
-    .about-container {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .about-container h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 24px;
-    }
-    .about-section {
-      margin-bottom: 32px;
-    }
-    .about-section h2 {
-      font-size: 15px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
-    }
-    .about-section p {
-      font-size: 14px;
-      line-height: 1.8;
-      color: rgba(255,255,255,0.55);
-    }
-    .about-section p + p {
-      margin-top: 12px;
-    }
-    .about-tech-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .about-tech-list span {
-      padding: 5px 14px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 500;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.45);
-    }
-
-    /* === RETURNS PAGE === */
-    #page-returns {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: #0a0a12;
-    }
-    .returns-container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .returns-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-    .returns-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .returns-header .sub {
-      font-size: 13px;
-      color: rgba(255,255,255,0.3);
-    }
-    .returns-summary {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 32px;
-    }
-    .returns-summary .stat-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 18px 20px;
-      text-align: center;
-    }
-    .returns-summary .stat-card .stat-value {
-      font-size: 24px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .returns-summary .stat-card .stat-label {
-      font-size: 11px;
-      color: rgba(255,255,255,0.25);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 6px;
-    }
-    .returns-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .returns-table th {
-      padding: 12px 16px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.25);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .returns-table th:last-child { text-align: right; }
-    .returns-table td {
-      padding: 14px 16px;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
-    .returns-table td:last-child { text-align: right; }
-    .returns-table tr:hover td { background: rgba(255,255,255,0.02); }
-    .returns-table .year-cell { font-weight: 600; color: rgba(255,255,255,0.6); }
-    .returns-table .return-cell { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .returns-table .return-cell.positive { color: #4ecdc4; }
-    .returns-table .return-cell.negative { color: #ff6b6b; }
-    .returns-table .memo-cell { color: rgba(255,255,255,0.35); font-size: 13px; }
-    .returns-table .bar-cell { width: 100px; }
-    .returns-table .bar-track {
-      width: 100%;
-      height: 6px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-    .returns-table .bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.6s ease;
-    }
-
-    /* Stock Tracker */
-    .stock-section {
-      margin-top: 48px;
-      padding-top: 32px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .stock-section-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #e8e8f0;
-    }
-    .stock-subtitle {
-      font-size: 12px;
-      color: rgba(255,255,255,0.25);
-      margin-top: 4px;
-      margin-bottom: 20px;
-    }
-    .stock-input-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .stock-input {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: #e8e8f0;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-      min-width: 0;
-      flex: 1;
-    }
-    .stock-input:focus { border-color: rgba(124,109,240,0.4); }
-    .stock-input[type="date"] { min-width: 140px; flex: 0; }
-    .stock-input[type="number"] { min-width: 100px; flex: 0; }
-    .stock-input::placeholder { color: rgba(255,255,255,0.2); }
-    .stock-type-toggle { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-    .stock-type-toggle input { display: none; }
-    .toggle-label {
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-    .stock-type-toggle input:checked + .actual-label { background: rgba(78,205,196,0.15); border-color: #4ecdc4; color: #4ecdc4; }
-    .stock-type-toggle input:checked + .pred-label { background: rgba(124,109,240,0.15); border-color: #7c6df0; color: #7c6df0; }
-    .stock-add-btn {
-      padding: 8px 20px;
-      border-radius: 8px;
-      border: none;
-      background: linear-gradient(135deg, #7c6df0, #4ecdc4);
-      color: #fff;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .stock-add-btn:hover { opacity: 0.85; }
-    .stock-clear-btn {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: transparent;
-      color: rgba(255,255,255,0.3);
-      font-size: 12px;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .stock-clear-btn:hover { background: rgba(255,107,107,0.12); border-color: rgba(255,107,107,0.3); color: #ff6b6b; }
-    .stock-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 3px;
-      height: 120px;
-      margin: 24px 0 20px;
-      padding: 16px 8px 4px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.015);
-      border: 1px solid rgba(255,255,255,0.04);
-      overflow-x: auto;
-      min-height: 120px;
-    }
-    .stock-chart .chart-bar {
-      flex-shrink: 0;
-      width: 28px;
-      border-radius: 3px 3px 0 0;
-      position: relative;
-      cursor: pointer;
-      transition: opacity 0.2s;
-      min-height: 4px;
-    }
-    .stock-chart .chart-bar:hover { opacity: 0.8; }
-    .stock-chart .chart-bar .bar-tooltip {
-      position: absolute;
-      bottom: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      font-size: 10px;
-      padding: 3px 8px;
-      border-radius: 5px;
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-      margin-bottom: 6px;
-    }
-    .stock-chart .chart-bar:hover .bar-tooltip { opacity: 1; }
-    .stock-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
-    }
-    .stock-table th {
-      padding: 8px 12px;
-      text-align: left;
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.2);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .stock-table td {
-      padding: 8px 12px;
-      font-size: 13px;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
-    }
-    .stock-table td .del-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.1);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-    .stock-table td .del-btn:hover { color: #ff6b6b; background: rgba(255,107,107,0.1); }
-    .stock-type-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-    .stock-type-badge.actual { background: rgba(78,205,196,0.12); color: #4ecdc4; }
-    .stock-type-badge.prediction { background: rgba(124,109,240,0.12); color: #7c6df0; }
-
-    .stock-api-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .stock-api-row .stock-input { flex: 1; max-width: 320px; font-size: 12px; }
-    .stock-api-hint a {
-      font-size: 12px;
-      color: rgba(124,109,240,0.6);
-      text-decoration: none;
-      white-space: nowrap;
-    }
-    .stock-api-hint a:hover { color: #7c6df0; }
-    .stock-symbol-input { max-width: 120px; font-weight: 600; text-transform: uppercase; }
-    .stock-fetch-btn {
-      padding: 8px 20px;
-      border-radius: 8px;
-      border: none;
-      background: rgba(124,109,240,0.2);
-      color: #7c6df0;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .stock-fetch-btn:hover { background: rgba(124,109,240,0.3); }
-    .stock-fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .stock-fetch-status {
-      font-size: 11px;
-      color: rgba(255,255,255,0.2);
-      transition: color 0.3s;
-    }
-    .stock-fetch-status.loading { color: #7c6df0; }
-    .stock-fetch-status.error { color: #ff6b6b; }
-    .stock-fetch-status.success { color: #4ecdc4; }
-    .stock-divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 16px 0;
-      font-size: 11px;
-      color: rgba(255,255,255,0.15);
-    }
-    .stock-divider::before,
-    .stock-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    /* === TRADING BOT === */
-    .bot-section {
-      margin-top: 40px;
-      padding-top: 32px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-    .bot-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .bot-header h3 { font-size: 18px; font-weight: 600; color: #e8e8f0; }
-    .bot-header .sub { font-size: 12px; color: rgba(255,255,255,0.25); margin-top: 4px; }
-    .bot-balance-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .bot-balance-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 14px 16px;
-    }
-    .bot-balance-card .label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: rgba(255,255,255,0.2);
-    }
-    .bot-balance-card .value {
-      font-size: 20px;
-      font-weight: 700;
-      margin-top: 4px;
-    }
-    .bot-balance-card .value.positive { color: #4ecdc4; }
-    .bot-balance-card .value.negative { color: #ff6b6b; }
-    .bot-balance-card .value.neutral { color: #e8e8f0; }
-    .bot-config {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 16px;
-      padding: 16px 18px;
-      background: rgba(255,255,255,0.015);
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.04);
-    }
-    .bot-config label {
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .bot-config .bot-input {
-      width: 80px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: #e8e8f0;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-    }
-    .bot-config .bot-input:focus { border-color: rgba(124,109,240,0.4); }
-    .bot-config .bot-input.wide { width: 130px; }
-    .bot-btn {
-      padding: 8px 22px;
-      border-radius: 8px;
-      border: none;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .bot-btn.primary { background: linear-gradient(135deg, #7c6df0, #4ecdc4); color: #fff; }
-    .bot-btn.primary:hover { opacity: 0.85; }
-    .bot-btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
-    .bot-btn.danger { background: rgba(255,107,107,0.12); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.15); }
-    .bot-btn.danger:hover { background: rgba(255,107,107,0.2); }
-    .bot-btn.secondary { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.08); }
-    .bot-btn.secondary:hover { background: rgba(255,255,255,0.10); }
-    .bot-status {
-      font-size: 11px;
-      color: rgba(255,255,255,0.2);
-      margin-top: 8px;
-      min-height: 18px;
-    }
-    .bot-status.success { color: #4ecdc4; }
-    .bot-status.error { color: #ff6b6b; }
-    .bot-status.info { color: #7c6df0; }
-    .bot-holdings {
-      margin-top: 16px;
-    }
-    .bot-holdings h4 {
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.2);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 10px;
-    }
-    .bot-trade-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-    }
-    .bot-trade-table th {
-      padding: 8px 10px;
-      text-align: left;
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.2);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      white-space: nowrap;
-    }
-    .bot-trade-table td {
-      padding: 8px 10px;
-      font-size: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.02);
-      white-space: nowrap;
-    }
-    .bot-trade-table .buy { color: #4ecdc4; }
-    .bot-trade-table .sell { color: #ff6b6b; }
-    .bot-empty {
-      text-align: center;
-      padding: 24px;
-      color: rgba(255,255,255,0.1);
-      font-size: 13px;
-    }
-    .bot-select {
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: #e8e8f0;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      cursor: pointer;
-      min-width: 140px;
-    }
-    .bot-select:focus { border-color: rgba(124,109,240,0.4); }
-    .bot-select option { background: #1a1a28; color: #e8e8f0; }
-    .bot-api-hint {
-      font-size: 10px;
-      color: rgba(255,255,255,0.15);
-      margin-left: auto;
-    }
-    .bot-params {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 12px 16px;
-      margin-bottom: 12px;
-      background: rgba(255,255,255,0.01);
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.04);
-      align-items: center;
-    }
-    .param-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      width: 100%;
-    }
-    .param-group label {
-      font-size: 12px;
-      color: rgba(255,255,255,0.3);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .param-group .bot-input { width: 60px; padding: 5px 8px; font-size: 12px; }
-    .param-desc {
-      font-size: 11px;
-      color: rgba(255,255,255,0.15);
-      margin-left: 8px;
-    }
-    .bot-backtest-header {
-      font-size: 13px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.4);
-      margin: 16px 0 10px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .bot-backtest-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .bot-backtest-card {
-      padding: 12px 14px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-      text-align: center;
-    }
-    .bot-backtest-card .bt-value {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .bot-backtest-card .bt-value.positive { color: #4ecdc4; }
-    .bot-backtest-card .bt-value.negative { color: #ff6b6b; }
-    .bot-backtest-card .bt-value.neutral { color: #e8e8f0; }
-    .bot-backtest-card .bt-label {
-      font-size: 10px;
-      color: rgba(255,255,255,0.2);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 4px;
-    }
-    .bot-equity-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 2px;
-      height: 80px;
-      padding: 8px 4px 2px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.01);
-      border: 1px solid rgba(255,255,255,0.04);
-      margin-bottom: 12px;
-      overflow-x: auto;
-    }
-    .bot-equity-chart .eq-bar {
-      flex-shrink: 0;
-      width: 6px;
-      border-radius: 2px 2px 0 0;
-      min-height: 3px;
-    }
-
-    /* === PAPERS PAGE === */
-    #page-papers {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: #0a0a12;
-    }
-    .papers-container {
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .papers-container h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 6px;
-    }
-    .papers-container .sub {
-      font-size: 13px;
-      color: rgba(255,255,255,0.3);
-      margin-bottom: 32px;
-    }
-    .papers-year-group {
-      margin-bottom: 32px;
-    }
-    .papers-year-group .year-label {
-      font-size: 15px;
-      font-weight: 600;
-      color: rgba(255,255,255,0.2);
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-    .paper-item {
-      padding: 18px 20px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.04);
-      margin-bottom: 10px;
-      transition: all 0.2s;
-    }
-    .paper-item:hover {
-      background: rgba(255,255,255,0.04);
-      border-color: rgba(255,255,255,0.08);
-    }
-    .paper-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: #e8e8f0;
-      line-height: 1.4;
-    }
-    .paper-authors {
-      font-size: 12.5px;
-      color: rgba(255,255,255,0.35);
-      margin-top: 4px;
-    }
-    .paper-meta {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-      align-items: center;
-    }
-    .paper-venue {
-      font-size: 11.5px;
-      font-weight: 500;
-      padding: 3px 10px;
-      border-radius: 5px;
-      background: rgba(124, 109, 240, 0.12);
-      color: #7c6df0;
-    }
-    .paper-tag {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.3);
-    }
-    .paper-links {
-      margin-top: 8px;
-      display: flex;
-      gap: 12px;
-    }
-    .paper-links a {
-      font-size: 12px;
-      color: rgba(255,255,255,0.25);
-      text-decoration: none;
-      transition: color 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .paper-links a:hover { color: #7c6df0; }
-
-    /* === DAILY PAGE === */
-    #page-daily {
-      min-height: 100vh;
-      overflow-y: auto;
-      background: #0a0a12;
-    }
-    .daily-container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 80px 24px 60px;
-    }
-    .daily-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-    .daily-header h1 {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f0e6ff 0%, #7c6df0 50%, #4ecdc4 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .daily-date {
-      font-size: 13px;
-      color: rgba(255,255,255,0.3);
-    }
-    .daily-progress-bar {
-      width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 2px;
-      margin: 16px 0 24px;
-      overflow: hidden;
-    }
-    .daily-progress-fill {
-      height: 100%;
-      border-radius: 2px;
-      background: linear-gradient(90deg, #7c6df0, #4ecdc4);
-      transition: width 0.5s ease;
-      width: 0%;
-    }
-    .daily-stats {
-      display: flex;
-      gap: 20px;
-      margin-bottom: 24px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.25);
-    }
-    .daily-stats span em { font-style: normal; color: rgba(255,255,255,0.6); font-weight: 600; }
-    .daily-timeline {
-      position: relative;
-      padding-left: 60px;
-    }
-    .daily-timeline::before {
-      content: '';
-      position: absolute;
-      left: 19px;
-      top: 0;
-      bottom: 0;
-      width: 1.5px;
-      background: rgba(255,255,255,0.06);
-    }
-    .daily-slot {
-      position: relative;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .daily-slot:hover { background: rgba(255,255,255,0.02); }
-    .daily-slot .time-marker {
-      position: absolute;
-      left: -43px;
-      top: 14px;
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      border: 2px solid rgba(255,255,255,0.06);
-      transition: all 0.3s;
-    }
-    .daily-slot.done .time-marker {
-      background: #4ecdc4;
-      border-color: #4ecdc4;
-      box-shadow: 0 0 12px rgba(78, 205, 196, 0.3);
-    }
-    .daily-slot .time-label {
-      min-width: 56px;
-      font-size: 11.5px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.2);
-      padding-top: 1px;
-      flex-shrink: 0;
-    }
-    .daily-slot .slot-content {
-      flex: 1;
-    }
-    .daily-slot .slot-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.7);
-      transition: all 0.3s;
-    }
-    .daily-slot.done .slot-title {
-      text-decoration: line-through;
-      color: rgba(255,255,255,0.2);
-    }
-    .daily-slot .slot-desc {
-      font-size: 12px;
-      color: rgba(255,255,255,0.25);
-      margin-top: 3px;
-    }
-    .daily-slot.done .slot-desc { color: rgba(255,255,255,0.1); }
-    .daily-slot .check {
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.1);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      margin-top: 1px;
-      transition: all 0.3s;
-      color: transparent;
-    }
-    .daily-slot.done .check {
-      background: #4ecdc4;
-      border-color: #4ecdc4;
-      color: #0a0a12;
-    }
-
-    /* === RESPONSIVE === */
-    @media (max-width: 768px) {
-      .graph-header { top: 60px; left: 16px; }
-      .graph-header h1 { font-size: 18px; }
-      .search-box { top: 60px; width: 140px; }
-      .search-box input { width: 100%; padding: 8px 12px 8px 32px; font-size: 12px; }
-      .search-box .search-icon { left: 11px; font-size: 12px; }
-      .filters { top: 108px; gap: 5px; }
-      .filter-btn { font-size: 11px; padding: 4px 10px; }
-      .detail-panel { width: 100%; right: -100%; padding: 24px 20px; }
-      .legend { padding: 8px 14px; gap: 10px; bottom: 16px; }
-      .legend-item { font-size: 10px; }
-      .resume-header { padding: 24px 0 20px; }
-      .resume-name { font-size: 24px; }
-      .skills-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-      .home-cards { grid-template-columns: 1fr; gap: 12px; }
-      .nav-tab { padding: 8px 16px; font-size: 13px; }
-      .returns-summary { grid-template-columns: 1fr; }
-      .returns-table .bar-cell { display: none; }
-      .returns-table th, .returns-table td { padding: 10px 12px; }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+  <!-- Access Gate -->
+  <div class="access-gate" id="accessGate">
+    <div class="access-box">
+      <span class="logo">✦</span>
+      <h1>KM · 空门</h1>
+      <div class="sub">请输入访问码</div>
+      <div class="access-input-wrap">
+        <input class="access-input" id="accessInput" type="password" placeholder="访问码" autocomplete="off" />
+        <button class="access-btn" id="accessBtn">进入</button>
+      </div>
+      <div class="access-error" id="accessError"></div>
+      <div style="margin-top:14px;font-size:11px;color:rgba(255,255,255,0.12)">○ 公开板块可直接访问 · 输入访问码解锁全部</div>
+    </div>
+  </div>
+
+  <!-- Private Access Modal -->
+  <div class="priv-modal" id="privModal">
+    <div class="priv-modal-box">
+      <h3>🔒 私人板块</h3>
+      <p style="font-size:13px;color:rgba(255,255,255,0.35);margin-bottom:16px">请输入私人访问码</p>
+      <input class="priv-input" id="privInput" type="password" placeholder="私人访问码" autocomplete="off" />
+      <div class="priv-error" id="privError"></div>
+      <div class="priv-actions">
+        <button class="priv-btn priv-btn-cancel" id="privCancel">取消</button>
+        <button class="priv-btn priv-btn-enter" id="privEnter">确认</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Navigation -->
   <nav class="nav-bar">
-    <button class="nav-tab" data-page="home">
-      <span class="tab-icon">⌂</span> 首页
-    </button>
-    <button class="nav-tab active" data-page="graph">
+    <button class="nav-tab active" data-page="home">
+          首页</button>
+    <button class="nav-tab" data-page="graph">
       <span class="tab-icon">✦</span> 能力关系网
     </button>
     <button class="nav-tab" data-page="resume">
@@ -1551,11 +60,18 @@
     <button class="nav-tab" data-page="daily">
       <span class="tab-icon">📋</span> 每日规划
     </button>
-    <button class="nav-tab" data-page="returns">
-      <span class="tab-icon">📈</span> 收益年鉴
-    </button>
+
     <button class="nav-tab" data-page="papers">
       <span class="tab-icon">🔬</span> 研究论文
+    </button>
+    <button class="nav-tab" data-page="finance">
+      <span class="tab-icon">💰</span> 财务账单
+    </button>
+    <button class="nav-tab" data-page="utilities">
+      <span class="tab-icon">🧰</span> 实用工具
+    </button>
+    <button class="nav-tab" data-page="health">
+      <span class="tab-icon">🍳</span> 食谱健康
     </button>
     <button class="nav-tab" data-page="about">
       <span class="tab-icon">ⓘ</span> 关于 KM
@@ -1565,12 +81,13 @@
   <!-- ================================================================
        PAGE 1: HOME
    ================================================================ -->
-  <div class="page" id="page-home">
+  <div class="page active" id="page-home">
     <div class="home-container">
       <div class="home-hero">
         <span class="logo">✦</span>
         <h1>KM · 空门</h1>
         <div class="subtitle">能力关系网 · 每日规划 · 投资追踪 · 量化策略<br/>你的个人数字中枢</div>
+        <div class="home-quote">人力有穷天无尽，留待有缘再出发</div>
       </div>
       <div class="home-cards">
         <div class="home-card" onclick="switchPage('graph')">
@@ -1591,22 +108,29 @@
           <div class="card-desc">日程时间线管理，<br/>打卡跟踪每日任务</div>
           <span class="card-action">进入 →</span>
         </div>
-        <div class="home-card" onclick="switchPage('returns')">
-          <span class="card-icon">📈</span>
-          <div class="card-title">收益年鉴</div>
-          <div class="card-desc">投资收益率记录，<br/>个股追踪与量化策略</div>
-          <span class="card-action">进入 →</span>
-        </div>
+
         <div class="home-card" onclick="switchPage('papers')">
           <span class="card-icon">🔬</span>
           <div class="card-title">研究论文</div>
           <div class="card-desc">已发表学术论文<br/>与会议报告归档</div>
           <span class="card-action">进入 →</span>
         </div>
-        <div class="home-card" onclick="switchPage('career')">
-          <span class="card-icon">🛤️</span>
-          <div class="card-title">职业历程</div>
-          <div class="card-desc">职业生涯时间线<br/>各阶段职责与成就</div>
+        <div class="home-card" onclick="switchPage('finance')">
+          <span class="card-icon">💰</span>
+          <div class="card-title">财务账单</div>
+          <div class="card-desc">收支记录与汇总<br/>提高理财意识</div>
+          <span class="card-action">进入 →</span>
+        </div>
+        <div class="home-card" onclick="switchPage('utilities')">
+          <span class="card-icon">🧰</span>
+          <div class="card-title">实用工具</div>
+          <div class="card-desc">番茄钟计时<br/>提升专注效率</div>
+          <span class="card-action">进入 →</span>
+        </div>
+        <div class="home-card" onclick="switchPage('health')">
+          <span class="card-icon">🍳</span>
+          <div class="card-title">食谱健康</div>
+          <div class="card-desc">我的菜谱收藏<br/>与体脂率记录</div>
           <span class="card-action">进入 →</span>
         </div>
         <div class="home-card" onclick="switchPage('about')">
@@ -1617,13 +141,248 @@
         </div>
       </div>
       <div class="home-footer">KM · 空门</div>
+
+      <!-- Career Timeline on Home -->
+      <div class="home-career">
+        <h2 class="home-career-title">🛤️ 职业历程</h2>
+        <div class="career-timeline">
+
+          <div class="career-entry current">
+            <div class="entry-period">2026.03 — 2026.04</div>
+            <div class="entry-role">软件开发工程师</div>
+            <div class="entry-company">福建星网天合智能科技有限公司</div>
+            <div class="entry-desc">
+              <ul>
+                <li>负责海外别墅安防项目的后端服务开发与维护</li>
+                <li>参与安防设备 API 对接与数据通信模块的设计实现</li>
+                <li>协助项目部署与现场调试，保障系统稳定运行</li>
+              </ul>
+            </div>
+            <div class="entry-tags">
+              <span>后端开发</span>
+              <span>API</span>
+              <span>安防</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Retrospective / Lessons Learned -->
+      <div class="home-review">
+        <h2 class="home-review-title">📝 复盘经验</h2>
+        <div class="review-list">
+
+          <div class="review-item">
+            <div class="review-date">2026.06.20</div>
+            <div class="review-content">
+              <span class="review-tag plan">规划</span>
+              雅思备考需要合理安排模考频次，一周至少 3 次完整套题，否则考试节奏感会生疏。
+            </div>
+          </div>
+
+          <div class="review-item">
+            <div class="review-date">2026.06.18</div>
+            <div class="review-content">
+              <span class="review-tag tech">技术</span>
+              前端项目静态部署到 GitHub Pages 时，SPA 路由需要做 404 处理，否则刷新会白屏。
+            </div>
+          </div>
+
+          <div class="review-item">
+            <div class="review-date">2026.06.15</div>
+            <div class="review-content">
+              <span class="review-tag life">生活</span>
+              早起学习效率最高的时段是 8:00-10:30，之后注意力开始下降，需要安排运动休息。
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Travel / Cities -->
+      <div class="home-travel">
+        <h2 class="home-travel-title">🗺️ 旅行足迹</h2>
+        <div class="travel-grid">
+
+          <div class="travel-card">
+            <div class="travel-card-bg" style="background:linear-gradient(135deg,#1a1a3e,#2d2d6e)"></div>
+            <div class="travel-card-content">
+              <span class="travel-flag">🇯🇵</span>
+              <div class="travel-city">东京</div>
+              <div class="travel-date">2025 · 秋</div>
+              <div class="travel-note">浅草寺 · 涩谷 · 秋叶原</div>
+            </div>
+          </div>
+
+          <div class="travel-card">
+            <div class="travel-card-bg" style="background:linear-gradient(135deg,#1a2e1a,#2d5e2d)"></div>
+            <div class="travel-card-content">
+              <span class="travel-flag">🇭🇰</span>
+              <div class="travel-city">香港</div>
+              <div class="travel-date">2024 · 夏</div>
+              <div class="travel-note">维多利亚港 · 太平山顶</div>
+            </div>
+          </div>
+
+          <div class="travel-card">
+            <div class="travel-card-bg" style="background:linear-gradient(135deg,#2e1a2e,#5e2d5e)"></div>
+            <div class="travel-card-content">
+              <span class="travel-flag">🇹🇭</span>
+              <div class="travel-city">曼谷</div>
+              <div class="travel-date">2024 · 春</div>
+              <div class="travel-note">大皇宫 · 暹罗广场</div>
+            </div>
+          </div>
+
+          <div class="travel-card">
+            <div class="travel-card-bg" style="background:linear-gradient(135deg,#1a2e3e,#2d5e6e)"></div>
+            <div class="travel-card-content">
+              <span class="travel-flag">🇸🇬</span>
+              <div class="travel-city">新加坡</div>
+              <div class="travel-date">2023 · 冬</div>
+              <div class="travel-note">滨海湾 · 圣淘沙</div>
+            </div>
+          </div>
+
+          <div class="travel-card">
+            <div class="travel-card-bg" style="background:linear-gradient(135deg,#3e1a1a,#6e2d2d)"></div>
+            <div class="travel-card-content">
+              <span class="travel-flag">🇨🇳</span>
+              <div class="travel-city">上海</div>
+              <div class="travel-date">常居</div>
+              <div class="travel-note">外滩 · 梧桐区 · 弄堂</div>
+            </div>
+          </div>
+
+          <div class="travel-card add-card">
+            <div class="travel-card-content" style="justify-content:center">
+              <div class="add-icon">+</div>
+              <div style="color:rgba(255,255,255,0.2);font-size:13px;margin-top:6px">添加城市</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 
   <!-- ================================================================
-       PAGE 2: SKILL GRAPH
-  ================================================================ -->
-  <div class="page active" id="page-graph">
+       PAGE 2: FINANCE
+   ================================================================ -->
+  <div class="page" id="page-finance">
+    <div class="finance-page">
+      <div class="finance-page-header">
+        <h1>💰 财务账单</h1>
+        <div class="sub">收支记录与汇总</div>
+      </div>
+
+      <div class="finance-summary">
+        <div class="finance-stat">
+          <span class="finance-stat-label">本月支出</span>
+          <span class="finance-stat-value" id="financeMonthTotal">¥0</span>
+        </div>
+        <div class="finance-stat">
+          <span class="finance-stat-label">笔数</span>
+          <span class="finance-stat-value" id="financeCount" style="font-size:18px;color:rgba(255,255,255,0.4)">0</span>
+        </div>
+        <button class="finance-add-btn" id="financeAddBtn">+ 记录</button>
+      </div>
+
+      <div class="finance-section-label">💸 支出记录</div>
+      <div class="finance-list" id="financeList"></div>
+
+      <div class="finance-section-label income">💰 收入记录</div>
+      <div class="finance-list" id="financeIncomeList"></div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       PAGE 3: UTILITIES — POMODORO TIMER
+   ================================================================ -->
+  <div class="page" id="page-utilities">
+    <div class="utility-container">
+      <div class="utility-header">
+        <h1>🧰 实用工具</h1>
+        <div class="sub">番茄工作法 · 专注计时</div>
+      </div>
+
+      <div class="pomodoro-card">
+        <div class="pomodoro-mode">
+          <span class="mode-btn active" data-mode="focus" id="modeFocus">🍅 专注</span>
+          <span class="mode-btn" data-mode="break" id="modeBreak">☕ 休息</span>
+        </div>
+
+        <div class="pomodoro-timer" id="pomodoroDisplay">25:00</div>
+
+        <div class="pomodoro-controls">
+          <button class="pomo-btn primary" id="pomoStart">▶ 开始</button>
+          <button class="pomo-btn" id="pomoPause" disabled>⏸ 暂停</button>
+          <button class="pomo-btn" id="pomoReset">⟳ 重置</button>
+        </div>
+
+        <div class="pomodoro-settings">
+          <label>
+            <span>专注 (分钟)</span>
+            <input type="number" id="pomoFocusTime" value="25" min="1" max="120" />
+          </label>
+          <label>
+            <span>休息 (分钟)</span>
+            <input type="number" id="pomoBreakTime" value="5" min="1" max="60" />
+          </label>
+        </div>
+
+        <div class="pomodoro-stats">
+          <span>已完成 <strong id="pomoCompleted">0</strong> 个番茄</span>
+        </div>
+      </div>
+
+      <!-- Cycle visualization -->
+      <div class="pomodoro-cycle" id="pomoCycle"></div>
+
+      <!-- Statistics -->
+      <div class="pomo-stats-panel" id="pomoStatsPanel">
+        <div class="pomo-stats-header">
+          <span>📊 统计</span>
+          <div class="pomo-period-tabs" id="pomoPeriodTabs">
+            <button class="pomo-period-btn active" data-period="year">年</button>
+            <button class="pomo-period-btn" data-period="month">月</button>
+            <button class="pomo-period-btn" data-period="week">周</button>
+            <button class="pomo-period-btn" data-period="day">日</button>
+          </div>
+        </div>
+        <div class="pomo-stats-grid">
+          <div class="pomo-stat-card">
+            <div class="pomo-stat-value" id="pomoStatSessions">0</div>
+            <div class="pomo-stat-label">完成番茄</div>
+          </div>
+          <div class="pomo-stat-card">
+            <div class="pomo-stat-value" id="pomoStatHours">0h</div>
+            <div class="pomo-stat-label">专注时长</div>
+          </div>
+          <div class="pomo-stat-card">
+            <div class="pomo-stat-value" id="pomoStatStreak">0</div>
+            <div class="pomo-stat-label">当前连续</div>
+          </div>
+          <div class="pomo-stat-card">
+            <div class="pomo-stat-value" id="pomoStatBest">0</div>
+            <div class="pomo-stat-label">最长连续</div>
+          </div>
+        </div>
+        <div class="pomo-monthly-chart" id="pomoMonthlyChart"></div>
+      </div>
+
+      <div class="pomodoro-tip">
+        💡 番茄工作法：专注 25 分钟 → 休息 5 分钟，每 4 个番茄后长休息 15-30 分钟。
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       PAGE 4: SKILL GRAPH
+   ================================================================ -->
+  <div class="page" id="page-graph">
 
     <!-- Tooltip -->
     <div class="tooltip" id="tooltip">
@@ -1645,6 +404,7 @@
         <h3>关联技能</h3>
         <div class="conn-list" id="panelConnections"></div>
       </div>
+      <div class="panel-extra" id="panelExtra"></div>
     </div>
 
     <!-- Header -->
@@ -1672,7 +432,7 @@
   </div>
 
   <!-- ================================================================
-       PAGE 2: RESUME
+       PAGE 5: RESUME
   ================================================================ -->
   <div class="page" id="page-resume">
 
@@ -1680,13 +440,12 @@
 
       <!-- Header -->
       <div class="resume-header">
-        <div class="resume-avatar">你</div>
-        <div class="resume-name">你的姓名</div>
-        <div class="resume-title">全栈工程师 / 数据科学家</div>
+        <div class="resume-avatar">ZC</div>
+        <div class="resume-name">Ziyi CHEN</div>
+        <div class="resume-title">软件开发 · 安防项目</div>
         <div class="resume-contact">
-          <span><span class="emoji">📍</span> 上海</span>
-          <span><span class="emoji">📧</span> your.email@example.com</span>
-          <span><span class="emoji">🔗</span> github.com/yourname</span>
+          <span><span class="emoji">💼</span> 求职中</span>
+          <span><span class="emoji">📄</span> <a href="Ziyi_CHEN_CV.pdf" target="_blank" style="color:#7c6df0;text-decoration:none">下载简历 (PDF)</a></span>
         </div>
       </div>
 
@@ -1694,9 +453,9 @@
       <div class="resume-section">
         <div class="resume-section-title">关于我</div>
         <div class="resume-summary">
-          拥有 6 年全栈开发与数据科学经验的技术从业者。擅长构建高可用的 Web 应用与数据驱动产品，
-          对前端架构、后端服务设计、机器学习工程化有深入实践。热爱技术分享与团队协作，
-          致力于用技术解决实际问题。
+          具备后端开发与安防项目实践经验的应届开发者。在福建星网天合智能科技有限公司实习期间，
+          参与海外别墅安防项目的后端服务开发、设备 API 对接与现场部署调试。熟悉 Web 开发与数据库技术，
+          热爱编程，持续学习，致力于用技术解决实际问题。
         </div>
       </div>
 
@@ -1706,63 +465,20 @@
 
         <div class="exp-item">
           <div class="exp-header">
-            <div class="exp-company">某科技有限公司 <span class="exp-role">· 高级全栈工程师</span></div>
-            <div class="exp-date">2022 – 至今</div>
+            <div class="exp-company">福建星网天合智能科技有限公司 <span class="exp-role">· 软件开发工程师</span></div>
+            <div class="exp-date">2026.03 – 2026.04</div>
           </div>
           <div class="exp-desc">
             <ul>
-              <li>主导公司核心业务系统架构升级，采用 React + Node.js + GraphQL 技术栈，系统响应性能提升 60%</li>
-              <li>搭建 CI/CD 自动化部署流水线，实现每天多次安全交付，发布效率提升 3 倍</li>
-              <li>设计和实现数据可视化大屏系统，使用 D3.js + ECharts 展示业务核心指标</li>
-              <li>指导 3 名初级开发工程师，建立代码审查与知识分享机制</li>
+              <li>负责海外别墅安防项目的后端服务开发与维护</li>
+              <li>参与安防设备 API 对接与数据通信模块的设计实现</li>
+              <li>协助项目部署与现场调试，保障系统稳定运行</li>
             </ul>
           </div>
           <div class="exp-tags">
-            <span class="exp-tag">React</span>
-            <span class="exp-tag">Node.js</span>
-            <span class="exp-tag">GraphQL</span>
-            <span class="exp-tag">Docker</span>
-            <span class="exp-tag">CI/CD</span>
-          </div>
-        </div>
-
-        <div class="exp-item">
-          <div class="exp-header">
-            <div class="exp-company">某互联网公司 <span class="exp-role">· 数据工程师</span></div>
-            <div class="exp-date">2020 – 2022</div>
-          </div>
-          <div class="exp-desc">
-            <ul>
-              <li>构建数据管道和 ETL 流程，处理每日 TB 级数据，支撑业务决策与分析需求</li>
-              <li>开发基于 Python + Pandas 的数据分析工具，将分析报告产出时间缩短 80%</li>
-              <li>搭建实时数据监控告警系统，基于 PyTorch 实现异常检测模型</li>
-            </ul>
-          </div>
-          <div class="exp-tags">
-            <span class="exp-tag">Python</span>
-            <span class="exp-tag">Pandas</span>
-            <span class="exp-tag">PyTorch</span>
-            <span class="exp-tag">SQL</span>
-          </div>
-        </div>
-
-        <div class="exp-item">
-          <div class="exp-header">
-            <div class="exp-company">某创业公司 <span class="exp-role">· 前端开发工程师</span></div>
-            <div class="exp-date">2018 – 2020</div>
-          </div>
-          <div class="exp-desc">
-            <ul>
-              <li>负责产品前端从 0 到 1 搭建，基于 React 技术栈实现核心业务功能</li>
-              <li>实现复杂交互的 UI 组件库，统一产品视觉规范，提升开发效率</li>
-              <li>与设计团队紧密协作，推动用户体验优化，产品 NPS 提升 25%</li>
-            </ul>
-          </div>
-          <div class="exp-tags">
-            <span class="exp-tag">React</span>
-            <span class="exp-tag">TypeScript</span>
-            <span class="exp-tag">UI/UX</span>
-            <span class="exp-tag">REST API</span>
+            <span class="exp-tag">后端开发</span>
+            <span class="exp-tag">API</span>
+            <span class="exp-tag">安防</span>
           </div>
         </div>
       </div>
@@ -1772,17 +488,10 @@
         <div class="resume-section-title">教育经历</div>
         <div class="edu-item">
           <div>
-            <div class="edu-school">上海交通大学</div>
-            <div class="edu-major">计算机科学与技术 · 硕士</div>
+            <div class="edu-school">桂林电子科技大学</div>
+            <div class="edu-major">电子信息工程 · 学士</div>
           </div>
-          <div class="edu-date">2016 – 2018</div>
-        </div>
-        <div class="edu-item">
-          <div>
-            <div class="edu-school">浙江大学</div>
-            <div class="edu-major">计算机科学与技术 · 学士</div>
-          </div>
-          <div class="edu-date">2012 – 2016</div>
+          <div class="edu-date">2022 – 2026</div>
         </div>
       </div>
 
@@ -1878,8 +587,150 @@
   </div>
 
   <!-- ================================================================
-       PAGE 4: ABOUT
-  ================================================================ -->
+       PAGE 10: HEALTH
+   ================================================================ -->
+  <div class="page" id="page-health">
+    <div class="health-container">
+
+      <h1>🍳 食谱健康</h1>
+      <div class="sub">菜谱 · 体脂 · 身体状态 · 皮肤护理</div>
+
+      <!-- === RECIPES SECTION === -->
+      <div class="health-section">
+        <div class="health-section-header">
+          <h2>📖 我的菜谱</h2>
+          <button class="health-add-btn" onclick="openRecipeModal()">+ 添加菜谱</button>
+        </div>
+        <div id="recipeList" class="recipe-list"></div>
+      </div>
+
+      <!-- === BODY FAT SECTION === -->
+      <div class="health-section" style="margin-top:48px;padding-top:36px;border-top:1px solid rgba(255,255,255,0.06)">
+        <div class="health-section-header">
+          <h2>📊 体脂率记录</h2>
+          <button class="health-add-btn" onclick="openBodyfatModal()">+ 记录</button>
+        </div>
+        <div id="bodyfatChart" class="bodyfat-chart"></div>
+        <div id="bodyfatList" class="bodyfat-list"></div>
+      </div>
+
+      <!-- === BODY STATUS SECTION === -->
+      <div class="health-section" style="margin-top:48px;padding-top:36px;border-top:1px solid rgba(255,255,255,0.06)">
+        <div class="health-section-header">
+          <h2>🧘 身体状态</h2>
+          <button class="health-add-btn" onclick="openBodyStatusModal()">+ 记录</button>
+        </div>
+        <div id="bodyStatusList" class="bodyfat-list"></div>
+      </div>
+
+      <!-- === SKIN CONDITION SECTION === -->
+      <div class="health-section" style="margin-top:48px;padding-top:36px;border-top:1px solid rgba(255,255,255,0.06)">
+        <div class="health-section-header">
+          <h2>🧴 皮肤状态</h2>
+          <button class="health-add-btn" onclick="openSkinModal()">+ 记录</button>
+        </div>
+        <div id="skinList" class="bodyfat-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Recipe Modal -->
+  <div class="health-modal" id="recipeModal">
+    <div class="health-modal-box">
+      <h3 id="recipeModalTitle">添加菜谱</h3>
+      <label>菜名</label>
+      <input id="recipeName" class="health-input" type="text" placeholder="如：红烧牛腩" />
+      <label>食材（每行一个）</label>
+      <textarea id="recipeIngredients" class="health-textarea" rows="4" placeholder="牛腩 500g&#10;土豆 2个&#10;胡萝卜 1根&#10;八角 2颗"></textarea>
+      <label>做法步骤</label>
+      <textarea id="recipeSteps" class="health-textarea" rows="5" placeholder="1. 牛腩切块焯水&#10;2. 炒糖色..."></textarea>
+      <label>备注</label>
+      <input id="recipeNote" class="health-input" type="text" placeholder="" />
+      <input id="recipeId" type="hidden" value="" />
+      <div class="health-modal-actions">
+        <button class="health-btn-cancel" onclick="closeRecipeModal()">取消</button>
+        <button class="health-btn-save" onclick="saveRecipe()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body Fat Modal -->
+  <div class="health-modal" id="bodyfatModal">
+    <div class="health-modal-box">
+      <h3>记录体脂率</h3>
+      <label>日期</label>
+      <input id="bfDate" class="health-input" type="date" />
+      <label>体脂率 (%)</label>
+      <input id="bfValue" class="health-input" type="number" step="0.1" placeholder="eg. 15.2" min="0" max="100" />
+      <label>备注</label>
+      <input id="bfNote" class="health-input" type="text" placeholder="eg. 早晨空腹测量" />
+      <div class="health-modal-actions">
+        <button class="health-btn-cancel" onclick="closeBodyfatModal()">取消</button>
+        <button class="health-btn-save" onclick="saveBodyfat()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body Status Modal -->
+  <div class="health-modal" id="bodyStatusModal">
+    <div class="health-modal-box">
+      <h3>记录身体状态</h3>
+      <label>日期</label>
+      <input id="bsDate" class="health-input" type="date" />
+      <label>体重 (kg)</label>
+      <input id="bsWeight" class="health-input" type="number" step="0.1" placeholder="eg. 65.0" />
+      <label>睡眠 (小时)</label>
+      <input id="bsSleep" class="health-input" type="number" step="0.5" placeholder="eg. 7.5" min="0" max="24" />
+      <label>精力状态</label>
+      <div style="display:flex;gap:6px;margin-bottom:14px" id="bsEnergyGroup">
+        <button class="bs-energy-btn" data-val="1" type="button">😩 差</button>
+        <button class="bs-energy-btn" data-val="2" type="button">😐 一般</button>
+        <button class="bs-energy-btn active" data-val="3" type="button">🙂 不错</button>
+        <button class="bs-energy-btn" data-val="4" type="button">😊 好</button>
+        <button class="bs-energy-btn" data-val="5" type="button">🔥 充沛</button>
+      </div>
+      <input id="bsEnergy" type="hidden" value="3" />
+      <label>运动</label>
+      <input id="bsExercise" class="health-input" type="text" placeholder="eg. 跑步 3km / 休息" />
+      <label>备注</label>
+      <input id="bsNote" class="health-input" type="text" placeholder="eg. 感觉有点累" />
+      <div class="health-modal-actions">
+        <button class="health-btn-cancel" onclick="closeBodyStatusModal()">取消</button>
+        <button class="health-btn-save" onclick="saveBodyStatus()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skin Condition Modal -->
+  <div class="health-modal" id="skinModal">
+    <div class="health-modal-box">
+      <h3>记录皮肤状态</h3>
+      <label>日期</label>
+      <input id="skDate" class="health-input" type="date" />
+      <label>皮肤状况</label>
+      <select id="skCondition" class="health-input">
+        <option value="good">😊 好</option>
+        <option value="normal">🙂 一般</option>
+        <option value="bad">😟 差</option>
+        <option value="acne">🔴 长痘</option>
+        <option value="dry">🏜️ 干燥</option>
+        <option value="oily">💧 出油</option>
+      </select>
+      <label>使用产品</label>
+      <input id="skProducts" class="health-input" type="text" placeholder="eg. 适乐肤洁面 + 理肤泉B5" />
+      <label>备注</label>
+      <input id="skNote" class="health-input" type="text" placeholder="eg. 熬夜有点暗沉" />
+      <div class="health-modal-actions">
+        <button class="health-btn-cancel" onclick="closeSkinModal()">取消</button>
+        <button class="health-btn-save" onclick="saveSkin()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       PAGE 6: ABOUT
+   ================================================================ -->
   <div class="page" id="page-about">
     <div class="about-container">
       <h1>ⓘ 关于 KM</h1>
@@ -1889,6 +740,7 @@
         <p>
           KM (空门) 是一个个人能力关系图谱网站，旨在以可视化的方式展示技能结构与知识脉络。
           通过力导向图直观呈现各项能力之间的关联，帮助梳理个人技术栈。
+          以前是用 Hexo 框架进行制作，现在重新进行了改进和迭代。
         </p>
       </div>
 
@@ -1909,242 +761,29 @@
            连线代表技能之间的关联关系。点击节点可查看详细信息。
         </p>
       </div>
+
+      <div class="about-section">
+        <h2>💭 个人感悟</h2>
+        <div class="about-reflection">
+          <p>
+            游戏究竟为了什么？我玩游戏是不是浪费了时间？
+          </p>
+          <p>
+            游戏可以玩，但要看看它有没有影响你的生活。刷短视频也一样——这些都是算法精心设计的，
+            目的是把你的时间留在屏幕上。不要让它影响你的真实生活。
+          </p>
+          <p>
+            给自己定个规矩：<strong>每天最多一个半小时</strong>。时间到了，就该放下屏幕，
+            去做那些真正重要的事。
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ================================================================
-       PAGE 5: RETURNS
-  ================================================================ -->
-  <div class="page" id="page-returns">
-    <div class="returns-container">
-
-      <div class="returns-header">
-        <div>
-          <h1>📈 收益年鉴</h1>
-          <div class="sub">历年投资收益率记录</div>
-        </div>
-      </div>
-
-      <div class="returns-summary">
-        <div class="stat-card">
-          <div class="stat-value" style="color:#4ecdc4">+18.6%</div>
-          <div class="stat-label">平均年化</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:#4ecdc4">+46.2%</div>
-          <div class="stat-label">最佳年份</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" style="color:#ff6b6b">-8.3%</div>
-          <div class="stat-label">最差年份</div>
-        </div>
-      </div>
-
-      <table class="returns-table">
-        <thead>
-          <tr>
-            <th>年份</th>
-            <th>收益率</th>
-            <th class="bar-cell"></th>
-            <th>备注</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="year-cell">2025</td>
-            <td class="return-cell positive">+32.5%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:70%;background:#4ecdc4"></div></div></td>
-            <td class="memo-cell">AI 板块贡献主要收益</td>
-          </tr>
-          <tr>
-            <td class="year-cell">2024</td>
-            <td class="return-cell positive">+46.2%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:100%;background:#4ecdc4"></div></div></td>
-            <td class="memo-cell">市场全面反弹，重仓科技股</td>
-          </tr>
-          <tr>
-            <td class="year-cell">2023</td>
-            <td class="return-cell positive">+12.8%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:28%;background:#4ecdc4"></div></div></td>
-            <td class="memo-cell">稳健配置，指数增强策略</td>
-          </tr>
-          <tr>
-            <td class="year-cell">2022</td>
-            <td class="return-cell negative">-8.3%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:18%;background:#ff6b6b"></div></div></td>
-            <td class="memo-cell">市场调整，控制回撤</td>
-          </tr>
-          <tr>
-            <td class="year-cell">2021</td>
-            <td class="return-cell positive">+10.5%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:23%;background:#4ecdc4"></div></div></td>
-            <td class="memo-cell">新能源与消费板块轮动</td>
-          </tr>
-          <tr>
-            <td class="year-cell">2020</td>
-            <td class="return-cell positive">+25.1%</td>
-            <td class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:54%;background:#4ecdc4"></div></div></td>
-            <td class="memo-cell">疫情后反弹，成长股行情</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- === STOCK TRACKER === -->
-      <div class="stock-section">
-        <div class="stock-section-title">个股追踪</div>
-        <div class="stock-subtitle">从 Alpha Vantage 获取实时行情，叠加预测分析</div>
-
-        <div class="stock-api-row">
-          <input class="stock-input" id="stockApiKey" placeholder="Alpha Vantage API Key（免费申请）" />
-          <span class="stock-api-hint">
-            <a href="https://www.alphavantage.co/support/#api-key" target="_blank">免费申请 →</a>
-          </span>
-        </div>
-        <div class="stock-input-row">
-          <input class="stock-input stock-symbol-input" id="stockNameInput" placeholder="股票代码" value="AAPL" />
-          <button class="stock-fetch-btn" id="stockFetchBtn">📡 获取数据</button>
-          <span class="stock-fetch-status" id="stockFetchStatus"></span>
-        </div>
-
-        <div class="stock-divider">
-          <span>或手动添加</span>
-        </div>
-
-        <div class="stock-input-row">
-          <input class="stock-input" id="stockDateInput" type="date" />
-          <input class="stock-input" id="stockPriceInput" type="number" step="0.01" placeholder="价格" />
-          <input class="stock-input" id="stockNoteInput" placeholder="备注（可选）" />
-        </div>
-        <div class="stock-input-row" style="margin-top:8px">
-          <label class="stock-type-toggle">
-            <input type="radio" name="recType" value="actual" checked />
-            <span class="toggle-label actual-label">📊 实际</span>
-          </label>
-          <label class="stock-type-toggle">
-            <input type="radio" name="recType" value="prediction" />
-            <span class="toggle-label pred-label">🔮 预测</span>
-          </label>
-          <button class="stock-add-btn" id="stockAddBtn">+ 添加</button>
-          <button class="stock-clear-btn" id="stockClearBtn">清空</button>
-        </div>
-
-        <div class="stock-chart" id="stockChart"></div>
-
-        <table class="stock-table">
-          <thead>
-            <tr><th>日期</th><th>价格</th><th>类型</th><th>备注</th><th></th></tr>
-          </thead>
-          <tbody id="stockTableBody"></tbody>
-        </table>
-
-        <!-- === TRADING BOT === -->
-        <div class="bot-section">
-          <div class="bot-header">
-            <div>
-              <h3>🤖 量化策略交易</h3>
-              <div class="sub">选择策略 → 回测验证 → 自动化执行</div>
-            </div>
-          </div>
-
-          <!-- Connection Panel -->
-          <div class="bot-config" style="border:1px solid rgba(124,109,240,0.15);background:rgba(124,109,240,0.03)">
-            <label style="min-width:60px">后端地址</label>
-            <input class="bot-input wide" id="botBackendUrl" value="http://localhost:3001" />
-            <button class="bot-btn primary" id="botConnectBtn" style="background:rgba(124,109,240,0.3);color:#7c6df0">🔌 连接</button>
-            <span id="botConnStatus" style="font-size:11px;color:rgba(255,255,255,0.2)">未连接</span>
-            <span class="bot-api-hint">需运行后端 + 富途 OpenAPI 本地服务</span>
-          </div>
-
-          <!-- Strategy Selection -->
-          <div class="bot-config">
-            <label>策略</label>
-            <select class="bot-select" id="botStrategy">
-              <option value="ma_cross">📊 双均线交叉</option>
-              <option value="rsi">📉 RSI 超买超卖</option>
-              <option value="bollinger">📈 布林带策略</option>
-              <option value="grid">🔲 网格交易</option>
-              <option value="threshold">📋 自定义涨跌幅</option>
-            </select>
-            <label>股票</label>
-            <input class="bot-input" id="botSymbol" value="AAPL" style="width:80px;text-transform:uppercase" />
-            <label>资金</label>
-            <input class="bot-input" id="botCapital" type="number" value="100000" style="width:100px" />
-            <button class="bot-btn primary" id="botBacktestBtn">📊 回测</button>
-          </div>
-
-          <!-- Strategy Parameters -->
-          <div class="bot-params" id="botParams">
-            <!-- MA Cross -->
-            <div class="param-group" data-strategy="ma_cross">
-              <label>短期均线 <input class="bot-input" data-param="shortPeriod" value="5" /></label>
-              <label>长期均线 <input class="bot-input" data-param="longPeriod" value="20" /></label>
-              <span class="param-desc">短期均线上穿长期均线 → 买入信号；下穿 → 卖出信号</span>
-            </div>
-            <!-- RSI -->
-            <div class="param-group" data-strategy="rsi" style="display:none">
-              <label>RSI 周期 <input class="bot-input" data-param="rsiPeriod" value="14" /></label>
-              <label>超卖阈值 <input class="bot-input" data-param="oversold" value="30" /></label>
-              <label>超买阈值 <input class="bot-input" data-param="overbought" value="70" /></label>
-              <span class="param-desc">RSI 低于超卖 → 买入；高于超买 → 卖出</span>
-            </div>
-            <!-- Bollinger -->
-            <div class="param-group" data-strategy="bollinger" style="display:none">
-              <label>周期 <input class="bot-input" data-param="bbPeriod" value="20" /></label>
-              <label>标准差 <input class="bot-input" data-param="bbStd" value="2" step="0.5" /></label>
-              <span class="param-desc">价格触及下轨 → 买入；触及上轨 → 卖出</span>
-            </div>
-            <!-- Grid -->
-            <div class="param-group" data-strategy="grid" style="display:none">
-              <label>网格层数 <input class="bot-input" data-param="gridLevels" value="5" /></label>
-              <label>网格间距 % <input class="bot-input" data-param="gridSpacing" value="2" step="0.5" /></label>
-              <span class="param-desc">每跌 X% 买入一层，每涨 X% 卖出一层</span>
-            </div>
-            <!-- Threshold -->
-            <div class="param-group" data-strategy="threshold" style="display:none">
-              <label>买入阈值 % <input class="bot-input" data-param="buyThresh" value="3" step="0.5" /></label>
-              <label>卖出阈值 % <input class="bot-input" data-param="sellThresh" value="6" step="0.5" /></label>
-              <label>每笔动用 <input class="bot-input" data-param="allocPct" value="25" step="5" /></label>
-              <span class="param-desc">当日跌超 X% 买入，涨超 Y% 卖出</span>
-            </div>
-          </div>
-
-          <!-- Live Controls -->
-          <div class="bot-config" style="border-color:rgba(78,205,196,0.1)">
-            <button class="bot-btn primary" id="botRunBtn" disabled>▶ 运行一次</button>
-            <button class="bot-btn secondary" id="botAutoToggle" disabled>⏸ 启动循环</button>
-            <button class="bot-btn danger" id="botResetBtn">⟳ 重置</button>
-            <span id="botRunStatus" style="font-size:11px;color:rgba(255,255,255,0.2)">需先回测验证</span>
-          </div>
-
-          <!-- Backtest Results -->
-          <div id="botBacktestResults" style="display:none">
-            <div class="bot-backtest-header">
-              <span>📊 回测结果</span>
-            </div>
-            <div class="bot-backtest-grid" id="botBacktestGrid"></div>
-            <div class="bot-equity-chart" id="botEquityChart"></div>
-          </div>
-
-          <div class="bot-status" id="botStatus"></div>
-
-          <div class="bot-holdings">
-            <h4>📋 当前持仓</h4>
-            <div id="botHoldings"><div class="bot-empty">暂无持仓</div></div>
-          </div>
-
-          <div class="bot-holdings" style="margin-top:20px">
-            <h4>📜 交易记录</h4>
-            <div id="botTrades"></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ================================================================
-       PAGE 6: PAPERS
-  ================================================================ -->
+       PAGE 8: PAPERS
+   ================================================================ -->
   <div class="page" id="page-papers">
     <div class="papers-container">
 
@@ -2233,12 +872,68 @@
         </div>
       </div>
 
+      <!-- === RESEARCH PROGRESS === -->
+      <div class="research-progress">
+        <div class="research-progress-header">
+          <div>
+            <div class="research-progress-title">📊 研究进度</div>
+            <div class="sub" style="margin-bottom:0">当前研究项目进展追踪</div>
+          </div>
+        </div>
+        <div id="researchProgressList"></div>
+      </div>
+
+      <!-- === GROUP MEETING NOTES === -->
+      <div class="meeting-section">
+        <div class="meeting-header">
+          <div>
+            <div class="meeting-section-title">📋 组会记录</div>
+            <div class="sub" style="margin-bottom:0">每周研究组会纪要</div>
+          </div>
+          <button class="meeting-export-btn" onclick="exportMeetings()">📥 导出 Markdown</button>
+        </div>
+
+        <div class="meeting-item">
+          <div class="meeting-date">2026.06.18</div>
+          <div class="meeting-topic">扩散模型在分子生成中的应用</div>
+          <div class="meeting-desc">汇报人：张三。讨论了基于扩散模型的分子构象生成方法，以及如何将其应用于药物发现。后续计划尝试在QM9数据集上进行实验验证。</div>
+          <div class="meeting-tags">
+            <span>扩散模型</span>
+            <span>分子生成</span>
+            <span>药物发现</span>
+          </div>
+        </div>
+
+        <div class="meeting-item">
+          <div class="meeting-date">2026.06.11</div>
+          <div class="meeting-topic">大语言模型推理加速技术综述</div>
+          <div class="meeting-desc">汇报人：李四。介绍了KV Cache量化、Speculative Decoding、PageAttention等主流推理加速方法，分析了各方法的优缺点与适用场景。</div>
+          <div class="meeting-tags">
+            <span>LLM</span>
+            <span>推理加速</span>
+            <span>KV Cache</span>
+          </div>
+        </div>
+
+        <div class="meeting-item">
+          <div class="meeting-date">2026.06.04</div>
+          <div class="meeting-topic">基于图神经网络的代码表示学习</div>
+          <div class="meeting-desc">汇报人：王五。论文分享：CodeBERT和GraphCodeBERT的原理与实现细节，讨论了如何将代码结构信息融入预训练过程。</div>
+          <div class="meeting-tags">
+            <span>图神经网络</span>
+            <span>代码表示</span>
+            <span>CodeBERT</span>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
   <!-- ================================================================
-       PAGE 7: DAILY
-  ================================================================ -->
+       PAGE 9: DAILY
+   ================================================================ -->
   <div class="page" id="page-daily">
     <div class="daily-container">
 
@@ -2247,7 +942,20 @@
           <h1>📋 每日规划</h1>
           <div class="daily-date" id="dailyDate"></div>
         </div>
+        <div class="daily-header-right">
+          <div class="countdown" id="countdown"></div>
+          <button class="exam-btn" id="examBtn">📅 考试安排</button>
+        </div>
       </div>
+      <!-- Exam Schedule Panel -->
+      <div class="exam-panel" id="examPanel">
+        <div class="exam-panel-header">
+          <span>📅 考试安排</span>
+          <button class="exam-close" id="examClose">✕</button>
+        </div>
+        <div class="exam-list" id="examList"></div>
+      </div>
+      <div class="daily-notice" id="dailyNotice"></div>
 
       <div class="daily-progress-bar">
         <div class="daily-progress-fill" id="dailyProgress"></div>
@@ -2258,1205 +966,219 @@
 
       <div class="daily-timeline" id="dailyTimeline"></div>
 
-    </div>
-  </div>
-
-  <!-- ================================================================
-       PAGE 8: CAREER
-   ================================================================ -->
-  <div class="page" id="page-career">
-    <div class="career-container">
-
-      <h1>🛤️ 职业历程</h1>
-      <div class="sub">职业生涯时间线</div>
-
-      <div class="career-timeline">
-
-        <div class="career-entry current">
-          <div class="entry-period">2022 — 至今</div>
-          <div class="entry-role">高级全栈工程师</div>
-          <div class="entry-company">某科技有限公司</div>
-          <div class="entry-desc">
-            <ul>
-              <li>主导核心业务系统架构升级，采用 React + Node.js + GraphQL 技术栈</li>
-              <li>搭建 CI/CD 自动化部署流水线，实现每天多次安全交付</li>
-              <li>设计实现数据可视化大屏系统，使用 D3.js + ECharts 展示核心指标</li>
-              <li>指导 3 名初级开发工程师，建立代码审查机制</li>
-            </ul>
+      <!-- Visa Progress -->
+      <div class="visa-section">
+        <h2 class="visa-title">🛂 签证进度</h2>
+        <div class="visa-card" id="visaCard">
+          <div class="visa-progress">
+            <div class="visa-step done"><span class="step-dot"></span><span class="step-label">提交申请</span><span class="step-date">06.01</span></div>
+            <div class="visa-step done"><span class="step-dot"></span><span class="step-label">材料审核</span><span class="step-date">06.10</span></div>
+            <div class="visa-step active"><span class="step-dot"></span><span class="step-label">面签预约</span><span class="step-date">预计 07.02</span></div>
+            <div class="visa-step"><span class="step-dot"></span><span class="step-label">出签</span><span class="step-date">—</span></div>
+            <div class="visa-step"><span class="step-dot"></span><span class="step-label">护照返回</span><span class="step-date">—</span></div>
           </div>
-          <div class="entry-tags">
-            <span>React</span>
-            <span>Node.js</span>
-            <span>GraphQL</span>
-            <span>Docker</span>
+          <div class="visa-info">
+            <span class="visa-type">🇬🇧 英国学生签证 (Tier 4)</span>
+            <span class="visa-status">当前：面签预约</span>
           </div>
         </div>
-
-        <div class="career-entry">
-          <div class="entry-period">2020 — 2022</div>
-          <div class="entry-role">数据工程师</div>
-          <div class="entry-company">某互联网公司</div>
-          <div class="entry-desc">
-            <ul>
-              <li>构建数据管道和 ETL 流程，处理每日 TB 级数据</li>
-              <li>开发基于 Python + Pandas 的数据分析工具，产出时间缩短 80%</li>
-              <li>搭建实时数据监控告警系统与异常检测模型</li>
-            </ul>
-          </div>
-          <div class="entry-tags">
-            <span>Python</span>
-            <span>Pandas</span>
-            <span>PyTorch</span>
-            <span>SQL</span>
-          </div>
-        </div>
-
-        <div class="career-entry">
-          <div class="entry-period">2018 — 2020</div>
-          <div class="entry-role">前端开发工程师</div>
-          <div class="entry-company">某创业公司</div>
-          <div class="entry-desc">
-            <ul>
-              <li>负责产品前端从 0 到 1 搭建，基于 React 实现核心业务</li>
-              <li>实现复杂交互的 UI 组件库，统一产品视觉规范</li>
-              <li>推动用户体验优化，产品 NPS 提升 25%</li>
-            </ul>
-          </div>
-          <div class="entry-tags">
-            <span>React</span>
-            <span>TypeScript</span>
-            <span>UI/UX</span>
-          </div>
-        </div>
-
-        <div class="career-entry">
-          <div class="entry-period">2016 — 2018</div>
-          <div class="entry-role">实习 / 研究生</div>
-          <div class="entry-company">上海交通大学</div>
-          <div class="entry-desc">
-            <ul>
-              <li>计算机科学与技术硕士研究</li>
-              <li>研究方向为知识图谱与自然语言处理</li>
-              <li>发表多篇学术论文，参与国家级科研项目</li>
-            </ul>
-          </div>
-          <div class="entry-tags">
-            <span>知识图谱</span>
-            <span>NLP</span>
-            <span>Python</span>
-          </div>
-        </div>
-
       </div>
 
     </div>
   </div>
 
-  <script>
-    // ============================================================
-    // TAB SWITCHING
-    // ============================================================
+  <!-- ================================================================
+       PAGE 8: IELTS NOTES
+   ================================================================ -->
+  <div class="page" id="page-ielts">
+    <div class="ielts-container">
+      <div class="ielts-header">
+        <button class="ielts-back" onclick="switchPage('graph')">← 返回</button>
+        <h1>📝 雅思笔记</h1>
+        <div class="sub">备考记录与经验总结</div>
+      </div>
 
-    function switchPage(pageId) {
-      // Update tabs
-      document.querySelectorAll('.nav-tab').forEach(t => {
-        t.classList.toggle('active', t.dataset.page === pageId);
-      });
-      // Update pages
-      document.querySelectorAll('.page').forEach(p => {
-        p.classList.toggle('active', p.id === 'page-' + pageId);
-      });
-      // Body overflow
-      document.body.style.overflow = (pageId === 'graph') ? 'hidden' : 'auto';
-      // Resize graph when switching back
-      if (pageId === 'graph') {
-        setTimeout(() => {
-          const c = document.getElementById('graph-container');
-          const w = c.clientWidth;
-          const h = c.clientHeight;
-          svg.attr('width', w).attr('height', h);
-          simulation.force('center', d3.forceCenter(w / 2, h / 2));
-          simulation.alpha(0.3).restart();
-        }, 50);
-      }
-    }
+      <!-- Overview Stats -->
+      <div class="ielts-stats">
+        <div class="ielts-stat-card">
+          <div class="stat-num">7.0</div>
+          <div class="stat-lbl">目标分</div>
+        </div>
+        <div class="ielts-stat-card">
+          <div class="stat-num">2026.07.04</div>
+          <div class="stat-lbl">笔试日期</div>
+        </div>
+        <div class="ielts-stat-card">
+          <div class="stat-num" style="color:#4ecdc4">备考中</div>
+          <div class="stat-lbl">当前状态</div>
+        </div>
+      </div>
 
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        switchPage(tab.dataset.page);
-      });
-    });
-
-    // ============================================================
-    // 1. DATA
-    // ============================================================
-
-    const CATEGORIES = [
-      { id: 'lang',       name: '编程语言',     color: '#ff6b6b' },
-      { id: 'frontend',   name: '前端开发',     color: '#4ecdc4' },
-      { id: 'backend',    name: '后端开发',     color: '#45b7d1' },
-      { id: 'datascience',name: '数据科学',     color: '#96ceb4' },
-      { id: 'ai',         name: 'AI / 深度学习',color: '#f0c040' },
-      { id: 'devops',     name: '工程效率',     color: '#c084fc' },
-      { id: 'design',     name: '设计',         color: '#f472b6' },
-      { id: 'soft',       name: '软技能',       color: '#fb923c' },
-    ];
-
-    const SKILLS = [
-      { id: 'python',     name: 'Python',           cat: 'lang',       level: 5, desc: '主要编程语言，广泛应用于后端、数据科学和 AI 领域' },
-      { id: 'javascript', name: 'JavaScript / TS',  cat: 'lang',       level: 5, desc: '现代 Web 开发的核心语言，全栈能力基础' },
-      { id: 'go',         name: 'Go',               cat: 'lang',       level: 3, desc: '高性能后端语言，擅长并发编程' },
-      { id: 'java',       name: 'Java',             cat: 'lang',       level: 3, desc: '企业级应用开发语言' },
-      { id: 'sql',        name: 'SQL',              cat: 'lang',       level: 4, desc: '数据库查询与数据管理' },
-      { id: 'react',      name: 'React',            cat: 'frontend',   level: 5, desc: '前端 UI 框架，组件化开发' },
-      { id: 'vue',        name: 'Vue.js',           cat: 'frontend',   level: 4, desc: '渐进式前端框架' },
-      { id: 'htmlcss',    name: 'HTML / CSS',       cat: 'frontend',   level: 5, desc: 'Web 基础技术栈' },
-      { id: 'tailwind',   name: 'TailwindCSS',      cat: 'frontend',   level: 4, desc: '实用优先的 CSS 框架' },
-      { id: 'd3',         name: 'D3.js',            cat: 'frontend',   level: 3, desc: '数据可视化库，擅长定制化图表' },
-      { id: 'nodejs',     name: 'Node.js',          cat: 'backend',    level: 4, desc: 'JavaScript 运行时，构建后端服务' },
-      { id: 'django',     name: 'Django / FastAPI', cat: 'backend',    level: 4, desc: 'Python Web 框架，快速构建 API' },
-      { id: 'rest',       name: 'REST API',         cat: 'backend',    level: 5, desc: 'API 设计规范，前后端通信标准' },
-      { id: 'graphql',    name: 'GraphQL',          cat: 'backend',    level: 3, desc: '灵活的 API 查询语言' },
-      { id: 'dataanalysis', name: '数据分析',       cat: 'datascience',level: 4, desc: '数据清洗、探索性分析与洞察提取' },
-      { id: 'pandas',     name: 'Pandas',           cat: 'datascience',level: 4, desc: 'Python 数据分析核心库' },
-      { id: 'dataviz',    name: '数据可视化',       cat: 'datascience',level: 4, desc: '将数据转化为直观的图表与仪表盘' },
-      { id: 'jupyter',    name: 'Jupyter',          cat: 'datascience',level: 3, desc: '交互式编程环境，适合数据探索' },
-      { id: 'ml',         name: '机器学习',         cat: 'ai',         level: 4, desc: '传统机器学习算法与模型训练' },
-      { id: 'pytorch',    name: 'PyTorch',          cat: 'ai',         level: 4, desc: '深度学习框架，灵活的动态计算图' },
-      { id: 'nlp',        name: 'NLP',              cat: 'ai',         level: 3, desc: '自然语言处理技术' },
-      { id: 'llm',        name: 'LLM',              cat: 'ai',         level: 4, desc: '大语言模型应用与微调' },
-      { id: 'git',        name: 'Git',              cat: 'devops',     level: 5, desc: '版本控制与协作开发' },
-      { id: 'cicd',       name: 'CI / CD',          cat: 'devops',     level: 4, desc: '自动化构建、测试与部署流水线' },
-      { id: 'docker',     name: 'Docker',           cat: 'devops',     level: 4, desc: '容器化部署与开发环境管理' },
-      { id: 'arch',       name: '架构设计',         cat: 'devops',     level: 4, desc: '系统架构设计与技术选型' },
-      { id: 'codereview', name: '代码审查',         cat: 'devops',     level: 4, desc: '代码质量保证与知识分享' },
-      { id: 'ui',         name: 'UI 设计',          cat: 'design',     level: 3, desc: '界面视觉设计' },
-      { id: 'ux',         name: '用户体验',         cat: 'design',     level: 4, desc: '用户研究与交互设计' },
-      { id: 'figma',      name: 'Figma',            cat: 'design',     level: 3, desc: '协作式 UI 设计工具' },
-      { id: 'teamwork',   name: '团队协作',         cat: 'soft',       level: 5, desc: '跨团队协作与沟通' },
-      { id: 'comm',       name: '沟通表达',         cat: 'soft',       level: 4, desc: '清晰表达技术方案与想法' },
-      { id: 'techwriting',name: '技术写作',         cat: 'soft',       level: 4, desc: '技术文档与博客撰写' },
-      { id: 'present',    name: '演讲分享',         cat: 'soft',       level: 3, desc: '技术分享与演讲表达' },
-      { id: 'pm',         name: '项目管理',         cat: 'soft',       level: 4, desc: '项目规划、进度管理与风险控制' },
-    ];
-
-    const EDGES = [
-      { s: 'python', t: 'django' }, { s: 'python', t: 'pandas' }, { s: 'python', t: 'pytorch' },
-      { s: 'python', t: 'ml' }, { s: 'python', t: 'dataanalysis' },
-      { s: 'javascript', t: 'react' }, { s: 'javascript', t: 'vue' }, { s: 'javascript', t: 'nodejs' },
-      { s: 'javascript', t: 'htmlcss' }, { s: 'sql', t: 'dataanalysis' }, { s: 'go', t: 'arch' },
-      { s: 'react', t: 'htmlcss' }, { s: 'react', t: 'tailwind' }, { s: 'react', t: 'd3' },
-      { s: 'vue', t: 'htmlcss' }, { s: 'vue', t: 'tailwind' }, { s: 'd3', t: 'dataviz' },
-      { s: 'htmlcss', t: 'ui' }, { s: 'nodejs', t: 'rest' }, { s: 'nodejs', t: 'graphql' },
-      { s: 'nodejs', t: 'docker' }, { s: 'django', t: 'rest' }, { s: 'django', t: 'docker' },
-      { s: 'rest', t: 'graphql' }, { s: 'dataanalysis', t: 'pandas' }, { s: 'dataanalysis', t: 'dataviz' },
-      { s: 'dataanalysis', t: 'jupyter' }, { s: 'dataanalysis', t: 'ml' }, { s: 'pandas', t: 'jupyter' },
-      { s: 'dataviz', t: 'd3' }, { s: 'ml', t: 'pytorch' }, { s: 'ml', t: 'nlp' },
-      { s: 'ml', t: 'dataanalysis' }, { s: 'pytorch', t: 'nlp' }, { s: 'pytorch', t: 'llm' },
-      { s: 'nlp', t: 'llm' }, { s: 'git', t: 'cicd' }, { s: 'git', t: 'codereview' },
-      { s: 'docker', t: 'cicd' }, { s: 'docker', t: 'arch' }, { s: 'cicd', t: 'pm' },
-      { s: 'arch', t: 'pm' }, { s: 'codereview', t: 'teamwork' }, { s: 'ui', t: 'figma' },
-      { s: 'ui', t: 'ux' }, { s: 'ux', t: 'figma' }, { s: 'ux', t: 'htmlcss' },
-      { s: 'teamwork', t: 'comm' }, { s: 'teamwork', t: 'pm' }, { s: 'comm', t: 'techwriting' },
-      { s: 'comm', t: 'present' }, { s: 'techwriting', t: 'present' }, { s: 'react', t: 'nodejs' },
-      { s: 'react', t: 'rest' }, { s: 'react', t: 'ui' }, { s: 'vue', t: 'rest' },
-      { s: 'nodejs', t: 'javascript' }, { s: 'django', t: 'python' }, { s: 'pm', t: 'arch' },
-      { s: 'pm', t: 'comm' }, { s: 'dataviz', t: 'ui' }, { s: 'llm', t: 'nlp' }, { s: 'llm', t: 'python' },
-    ];
-
-    const skillMap = {};
-    SKILLS.forEach(s => skillMap[s.id] = s);
-    const catMap = {};
-    CATEGORIES.forEach(c => catMap[c.id] = c);
-
-    // ============================================================
-    // 2. SETUP D3
-    // ============================================================
-
-    const container = document.getElementById('graph-container');
-    const svg = d3.select('#graph-svg');
-    const $tooltip = d3.select('#tooltip');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    const g = svg.append('g').attr('class', 'main-group');
-    const zoom = d3.zoom()
-      .scaleExtent([0.2, 4])
-      .on('zoom', (event) => { g.attr('transform', event.transform); });
-    svg.call(zoom);
-
-    svg.append('defs').selectAll('marker')
-      .data(['arrow']).join('marker')
-      .attr('id', d => d).attr('viewBox', '0 -5 10 10').attr('refX', 22).attr('refY', 0)
-      .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
-      .append('path').attr('fill', 'rgba(255,255,255,0.15)').attr('d', 'M0,-5L10,0L0,5');
-
-    const defs = svg.select('defs');
-    const filter = defs.append('filter').attr('id', 'glow');
-    filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
-    const merge = filter.append('feMerge');
-    merge.append('feMergeNode').attr('in', 'blur');
-    merge.append('feMergeNode').attr('in', 'SourceGraphic');
-
-    const filterLg = defs.append('filter').attr('id', 'glow-lg');
-    filterLg.append('feGaussianBlur').attr('stdDeviation', '8').attr('result', 'blur');
-    const mergeLg = filterLg.append('feMerge');
-    mergeLg.append('feMergeNode').attr('in', 'blur');
-    mergeLg.append('feMergeNode').attr('in', 'SourceGraphic');
-
-    // ============================================================
-    // 3. PROCESS DATA
-    // ============================================================
-
-    const nodes = SKILLS.map(s => ({
-      ...s, r: 8 + s.level * 3.5, color: catMap[s.cat].color,
-    }));
-
-    const links = EDGES.map(e => ({ source: e.s, target: e.t }));
-
-    const adjacency = {};
-    nodes.forEach(n => adjacency[n.id] = new Set());
-    links.forEach(l => {
-      const sid = typeof l.source === 'object' ? l.source.id : l.source;
-      const tid = typeof l.target === 'object' ? l.target.id : l.target;
-      adjacency[sid].add(tid); adjacency[tid].add(sid);
-    });
-
-    // ============================================================
-    // 4. FORCE SIMULATION
-    // ============================================================
-
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(d => d.id).distance(d => {
-        const s = typeof d.source === 'object' ? d.source : d.source;
-        const t = typeof d.target === 'object' ? d.target : d.target;
-        return (skillMap[s.id]?.cat === skillMap[t.id]?.cat) ? 70 : 110;
-      }).strength(0.5))
-      .force('charge', d3.forceManyBody().strength(d => -d.r * 14))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => d.r + 8).strength(0.7))
-      .alphaDecay(0.025)
-      .on('tick', ticked);
-
-    // ============================================================
-    // 5. DRAW
-    // ============================================================
-
-    const linkGroup = g.append('g').attr('class', 'links');
-    const link = linkGroup.selectAll('line').data(links).join('line')
-      .attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.2).attr('stroke-linecap', 'round');
-
-    const nodeGroup = g.append('g').attr('class', 'nodes');
-    const node = nodeGroup.selectAll('g').data(nodes).join('g').attr('class', 'node-group')
-      .call(d3.drag().on('start', dragStarted).on('drag', dragged).on('end', dragEnded));
-
-    node.append('circle')
-      .attr('r', d => d.r).attr('fill', d => d.color).attr('stroke', d => d.color)
-      .attr('stroke-width', 1).attr('stroke-opacity', 0.3).attr('filter', 'url(#glow)')
-      .style('cursor', 'pointer').style('transition', 'stroke-width 0.2s, stroke-opacity 0.2s');
-
-    node.append('circle').attr('class', 'inner-ring')
-      .attr('r', d => d.r + 3).attr('fill', 'none').attr('stroke', d => d.color)
-      .attr('stroke-width', 0).attr('stroke-opacity', 0)
-      .style('transition', 'stroke-width 0.25s, stroke-opacity 0.25s').style('pointer-events', 'none');
-
-    node.append('text').text(d => d.name).attr('dy', d => d.r + 15)
-      .attr('text-anchor', 'middle').attr('fill', 'rgba(255,255,255,0.55)')
-      .attr('font-size', '10px').attr('font-weight', '500').attr('font-family', 'Inter, sans-serif')
-      .style('pointer-events', 'none').style('transition', 'fill 0.2s');
-
-    // ============================================================
-    // 6. INTERACTIONS
-    // ============================================================
-
-    let selectedNodeId = null;
-    function getNeighborIds(id) { return adjacency[id] || new Set(); }
-
-    function highlightNode(id) {
-      selectedNodeId = id;
-      const neighborIds = getNeighborIds(id);
-      neighborIds.add(id);
-      node.each(function(d) {
-        const isActive = neighborIds.has(d.id), isCenter = d.id === id;
-        const circle = d3.select(this).select('circle');
-        const text = d3.select(this).select('text');
-        const ring = d3.select(this).select('.inner-ring');
-        circle.attr('stroke-width', isCenter ? 3 : isActive ? 2 : 0)
-          .attr('stroke-opacity', isActive ? 0.6 : 0)
-          .transition().duration(300).attr('fill-opacity', isActive ? 1 : 0.1);
-        text.transition().duration(300)
-          .attr('fill', isActive ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)');
-        ring.attr('stroke-width', isCenter ? 5 : 0).attr('stroke-opacity', isCenter ? 0.35 : 0);
-        circle.attr('filter', isCenter ? 'url(#glow-lg)' : (isActive ? 'url(#glow)' : null));
-      });
-      link.each(function(d) {
-        const sid = typeof d.source === 'object' ? d.source.id : d.source;
-        const tid = typeof d.target === 'object' ? d.target.id : d.target;
-        const isConnected = (sid === id || tid === id);
-        d3.select(this).transition().duration(300)
-          .attr('stroke', isConnected ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.03)')
-          .attr('stroke-width', isConnected ? 2 : 0.5);
-      });
-    }
-
-    function clearHighlight() {
-      selectedNodeId = null;
-      node.each(function(d) {
-        d3.select(this).select('circle').attr('filter', 'url(#glow)')
-          .attr('stroke-width', 1).attr('stroke-opacity', 0.3).attr('fill-opacity', 1);
-        d3.select(this).select('text').attr('fill', 'rgba(255,255,255,0.55)');
-        d3.select(this).select('.inner-ring').attr('stroke-width', 0).attr('stroke-opacity', 0);
-      });
-      link.attr('stroke', 'rgba(255,255,255,0.08)').attr('stroke-width', 1.2);
-      closePanel();
-    }
-
-    svg.on('click', (event) => { if (event.target === svg.node()) clearHighlight(); });
-
-    node.on('mouseenter', function(event, d) {
-      if (selectedNodeId) return;
-      $tooltip.select('.tt-name').text(d.name);
-      $tooltip.select('.tt-cat').text(catMap[d.cat]?.name || '');
-      $tooltip.classed('visible', true).style('left', (event.offsetX + 14) + 'px').style('top', (event.offsetY - 10) + 'px');
-      if (!selectedNodeId) {
-        d3.select(this).select('circle').attr('filter', 'url(#glow-lg)').attr('stroke-width', 2.5).attr('stroke-opacity', 0.5);
-        d3.select(this).select('.inner-ring').attr('stroke-width', 4).attr('stroke-opacity', 0.3);
-        d3.select(this).select('text').attr('fill', 'rgba(255,255,255,0.9)');
-      }
-    });
-    node.on('mousemove', function(event) {
-      if (selectedNodeId) return;
-      $tooltip.style('left', (event.offsetX + 14) + 'px').style('top', (event.offsetY - 10) + 'px');
-    });
-    node.on('mouseleave', function(event, d) {
-      $tooltip.classed('visible', false);
-      if (!selectedNodeId) {
-        d3.select(this).select('circle').attr('filter', 'url(#glow)').attr('stroke-width', 1).attr('stroke-opacity', 0.3);
-        d3.select(this).select('.inner-ring').attr('stroke-width', 0).attr('stroke-opacity', 0);
-        d3.select(this).select('text').attr('fill', 'rgba(255,255,255,0.55)');
-      }
-    });
-    node.on('click', function(event, d) {
-      event.stopPropagation();
-      if (selectedNodeId === d.id) { clearHighlight(); return; }
-      highlightNode(d.id);
-      showPanel(d);
-    });
-
-    // ============================================================
-    // 7. DETAIL PANEL
-    // ============================================================
-
-    const panel = document.getElementById('detailPanel');
-    const panelName = document.getElementById('panelName');
-    const panelCatTag = document.getElementById('panelCatTag');
-    const panelStars = document.getElementById('panelStars');
-    const panelLevelLabel = document.getElementById('panelLevelLabel');
-    const panelDesc = document.getElementById('panelDesc');
-    const panelConn = document.getElementById('panelConnections');
-    const panelClose = document.getElementById('panelClose');
-    panelClose.addEventListener('click', clearHighlight);
-
-    function showPanel(d) {
-      const cat = catMap[d.cat];
-      panelCatTag.textContent = cat.name;
-      panelCatTag.style.background = cat.color + '22';
-      panelCatTag.style.color = cat.color;
-      panelName.textContent = d.name;
-      panelStars.innerHTML = '';
-      for (let i = 0; i < 5; i++) {
-        const span = document.createElement('span');
-        span.textContent = '★'; if (i < d.level) span.classList.add('filled');
-        panelStars.appendChild(span);
-      }
-      panelLevelLabel.textContent = (['', '入门', '初阶', '进阶', '熟练', '精通'])[d.level] || '';
-      panelDesc.textContent = d.desc;
-      panelConn.innerHTML = '';
-      const neighborIds = getNeighborIds(d.id);
-      const neighbors = [];
-      neighborIds.forEach(nid => { if (nid !== d.id && skillMap[nid]) neighbors.push(skillMap[nid]); });
-      neighbors.sort((a, b) => b.level - a.level);
-      neighbors.forEach(n => {
-        const chip = document.createElement('span');
-        chip.className = 'conn-chip';
-        chip.style.borderLeft = '3px solid ' + (catMap[n.cat]?.color || 'rgba(255,255,255,0.1)');
-        chip.textContent = n.name;
-        chip.addEventListener('click', () => {
-          const targetNode = nodes.find(nd => nd.id === n.id);
-          if (targetNode) { highlightNode(n.id); showPanel(targetNode); }
-        });
-        panelConn.appendChild(chip);
-      });
-      panel.classList.add('open');
-    }
-
-    function closePanel() { panel.classList.remove('open'); }
-
-    // ============================================================
-    // 8. FILTERS
-    // ============================================================
-
-    let activeFilter = null;
-
-    function buildFilters() {
-      const container = document.getElementById('filters');
-      const allBtn = document.createElement('button');
-      allBtn.className = 'filter-btn active';
-      allBtn.textContent = '全部';
-      allBtn.dataset.cat = 'all';
-      allBtn.addEventListener('click', () => setFilter('all'));
-      container.appendChild(allBtn);
-      CATEGORIES.forEach(c => {
-        const count = SKILLS.filter(s => s.cat === c.id).length;
-        const btn = document.createElement('button');
-        btn.className = 'filter-btn';
-        btn.innerHTML = `<span class="dot" style="background:${c.color}"></span>${c.name}<span class="count">${count}</span>`;
-        btn.dataset.cat = c.id;
-        btn.addEventListener('click', () => setFilter(c.id));
-        container.appendChild(btn);
-      });
-    }
-
-    function setFilter(catId) {
-      activeFilter = catId;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === catId));
-      if (selectedNodeId) clearHighlight();
-      node.each(function(d) {
-        d3.select(this).style('display', (catId === 'all' || d.cat === catId) ? null : 'none');
-      });
-      link.each(function(d) {
-        const sid = typeof d.source === 'object' ? d.source.id : d.source;
-        const tid = typeof d.target === 'object' ? d.target.id : d.target;
-        const sVisible = catId === 'all' || (skillMap[sid]?.cat === catId);
-        const tVisible = catId === 'all' || (skillMap[tid]?.cat === catId);
-        d3.select(this).style('display', (sVisible && tVisible) ? null : 'none');
-      });
-      simulation.alpha(0.3).restart();
-    }
-
-    // ============================================================
-    // 9. SEARCH
-    // ============================================================
-
-    const searchInput = document.getElementById('searchInput');
-    let searchTimeout = null;
-    searchInput.addEventListener('input', () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        const q = searchInput.value.trim().toLowerCase();
-        if (!q) { node.style('opacity', 1); link.style('opacity', 1); return; }
-        node.each(function(d) {
-          const match = d.name.toLowerCase().includes(q) || d.desc.toLowerCase().includes(q);
-          d3.select(this).style('opacity', match ? 1 : 0.12);
-        });
-        link.style('opacity', 0.08);
-      }, 200);
-    });
-
-    // ============================================================
-    // 10. TICK
-    // ============================================================
-
-    function ticked() {
-      link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-      node.attr('transform', d => `translate(${d.x},${d.y})`);
-    }
-
-    // ============================================================
-    // 11. DRAG
-    // ============================================================
-
-    function dragStarted(event, d) { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
-    function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
-    function dragEnded(event, d) { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }
-
-    // ============================================================
-    // 12. BUILD UI
-    // ============================================================
-
-    buildFilters();
-
-    const legendContainer = document.getElementById('legend');
-    CATEGORIES.forEach(c => {
-      const item = document.createElement('div');
-      item.className = 'legend-item';
-      item.innerHTML = `<span class="swatch" style="background:${c.color}"></span>${c.name}`;
-      legendContainer.appendChild(item);
-    });
-
-    // ============================================================
-    // 13. RESIZE
-    // ============================================================
-
-    window.addEventListener('resize', () => {
-      const w = container.clientWidth, h = container.clientHeight;
-      svg.attr('width', w).attr('height', h);
-      simulation.force('center', d3.forceCenter(w / 2, h / 2));
-      simulation.alpha(0.3).restart();
-    });
-
-    simulation.force('center', d3.forceCenter(width / 2, height / 2));
-    setTimeout(() => { simulation.alpha(0.5).restart(); }, 100);
-
-    console.log('✦ KM loaded —', nodes.length, 'skills,', links.length, 'connections');
-
-    // ============================================================
-    // DAILY PLANNER
-    // ============================================================
-
-    // Set today's date
-    const dateEl = document.getElementById('dailyDate');
-    if (dateEl) {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-      dateEl.textContent = `${y}.${m}.${d} ${weekdays[now.getDay()]}`;
-    }
-
-    const schedule = [
-      { time: '08:00', title: '起床 & 听力磨耳朵', desc: '刷牙洗漱时播放雅思听力 / BBC', done: false },
-      { time: '08:30', title: '早餐 & 晨读', desc: '雅思口语素材朗读 · 跟读训练', done: false },
-      { time: '09:00', title: '听力专项训练', desc: 'Section 1-4 精听 + 错题分析', done: false },
-      { time: '10:30', title: '阅读专项训练', desc: 'Passage 1-3 限时练习 + 长难句分析', done: false },
-      { time: '12:00', title: '午餐 & 休息', desc: '放松大脑，下午才有状态', done: false },
-      { time: '13:30', title: '写作专项训练', desc: 'Task 1 图表 / Task 2 大作文', done: false },
-      { time: '15:00', title: '口语专项训练', desc: 'Part 1-3 模拟问答 · 录音自评', done: false },
-      { time: '16:30', title: '单词 & 错题整理', desc: '雅思核心词汇 · 当日错题复盘', done: false },
-      { time: '18:00', title: '运动 & 放松', desc: '健身 / 跑步 / 散步', done: false },
-      { time: '20:00', title: '真题模拟', desc: '完整套题训练（隔天）', done: false },
-      { time: '21:30', title: '晚间复盘', desc: '总结今日薄弱项，调整明日计划', done: false },
-      { time: '23:00', title: '睡前准备', desc: '减少屏幕时间，准备入睡', done: false },
-    ];
-
-    function renderDaily() {
-      const container = document.getElementById('dailyTimeline');
-      const doneEl = document.getElementById('doneCount');
-      const totalEl = document.getElementById('totalCount');
-      const progressEl = document.getElementById('dailyProgress');
-      if (!container) return;
-
-      container.innerHTML = '';
-      let done = 0;
-
-      schedule.forEach((item, idx) => {
-        if (item.done) done++;
-        const slot = document.createElement('div');
-        slot.className = 'daily-slot' + (item.done ? ' done' : '');
-        slot.innerHTML = `
-          <span class="time-marker"></span>
-          <span class="time-label">${item.time}</span>
-          <div class="slot-content">
-            <div class="slot-title">${item.title}</div>
-            <div class="slot-desc">${item.desc}</div>
+      <!-- Section: Listening -->
+      <div class="ielts-section">
+        <div class="ielts-section-header">
+          <span class="ielts-section-icon">🎧</span>
+          <span class="ielts-section-title">听力 Listening</span>
+        </div>
+        <div class="ielts-card-list">
+          <div class="ielts-card">
+            <div class="ielts-card-title">Section 1 高频场景词</div>
+            <div class="ielts-card-body">
+              accommodation, reservation, appointment, deposit, reference, insurance, policy, certificate
+            </div>
+            <div class="ielts-card-date">2026.06.20</div>
           </div>
-          <span class="check">✓</span>
-        `;
-        slot.addEventListener('click', () => {
-          schedule[idx].done = !schedule[idx].done;
-          renderDaily();
-        });
-        container.appendChild(slot);
-      });
-
-      if (doneEl) doneEl.textContent = done;
-      if (totalEl) totalEl.textContent = schedule.length;
-      if (progressEl) progressEl.style.width = (done / schedule.length * 100) + '%';
-    }
-
-    renderDaily();
-
-    // ============================================================
-    // STOCK TRACKER
-    // ============================================================
-
-    const STORAGE_KEY = 'skill_graph_stocks';
-
-    function loadRecords() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
-    }
-
-    function saveRecords(records) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-    }
-
-    function renderStockChart(records) {
-      const chart = document.getElementById('stockChart');
-      if (!chart || records.length === 0) { if (chart) chart.innerHTML = '<div style="color:rgba(255,255,255,0.15);font-size:12px;padding:20px;width:100%;text-align:center">暂无数据，添加一条记录开始追踪</div>'; return; }
-      const prices = records.map(r => r.price);
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      const range = max - min || 1;
-      chart.innerHTML = '';
-      records.forEach(r => {
-        const h = ((r.price - min) / range * 80 + 10);
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        bar.style.height = h + '%';
-        bar.style.background = r.type === 'prediction' ? 'rgba(124,109,240,0.6)' : 'rgba(78,205,196,0.7)';
-        bar.style.border = r.type === 'prediction' ? '1px dashed rgba(124,109,240,0.4)' : '1px solid rgba(78,205,196,0.2)';
-        bar.innerHTML = `<div class="bar-tooltip">${r.date}<br/>$${r.price.toFixed(2)}</div>`;
-        chart.appendChild(bar);
-      });
-    }
-
-    function renderStockTable(records) {
-      const tbody = document.getElementById('stockTableBody');
-      if (!tbody) return;
-      if (records.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:rgba(255,255,255,0.1);padding:24px;font-size:13px">还没有记录</td></tr>';
-        return;
-      }
-      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
-      tbody.innerHTML = '';
-      sorted.forEach((r, idx) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="color:rgba(255,255,255,0.4);font-size:12px">${r.date}</td>
-          <td style="font-weight:600;color:rgba(255,255,255,0.7)">$${r.price.toFixed(2)}</td>
-          <td><span class="stock-type-badge ${r.type}">${r.type === 'actual' ? '实际' : '预测'}</span></td>
-          <td style="color:rgba(255,255,255,0.25);font-size:12px">${r.note || '—'}</td>
-          <td><button class="del-btn" data-idx="${idx}">✕</button></td>
-        `;
-        tr.querySelector('.del-btn').addEventListener('click', () => {
-          let recs = loadRecords();
-          const realIdx = recs.findIndex(item => item.id === r.id);
-          if (realIdx >= 0) {
-            recs.splice(realIdx, 1);
-            saveRecords(recs);
-            renderStock(recs);
-          }
-        });
-        tbody.appendChild(tr);
-      });
-    }
-
-    function renderStock(records) {
-      renderStockChart(records);
-      renderStockTable(records);
-    }
-
-    // Init
-    (function initStock() {
-      const addBtn = document.getElementById('stockAddBtn');
-      const clearBtn = document.getElementById('stockClearBtn');
-      const fetchBtn = document.getElementById('stockFetchBtn');
-      const nameInput = document.getElementById('stockNameInput');
-      const dateInput = document.getElementById('stockDateInput');
-      const priceInput = document.getElementById('stockPriceInput');
-      const noteInput = document.getElementById('stockNoteInput');
-      const apiKeyInput = document.getElementById('stockApiKey');
-      const fetchStatus = document.getElementById('stockFetchStatus');
-
-      // Restore saved API key
-      const savedKey = localStorage.getItem('av_api_key');
-      if (savedKey && apiKeyInput) apiKeyInput.value = savedKey;
-
-      // Set today's date
-      if (dateInput) {
-        const t = new Date();
-        dateInput.value = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
-      }
-
-      // Fetch from Alpha Vantage
-      if (fetchBtn) {
-        fetchBtn.addEventListener('click', async () => {
-          const symbol = (nameInput?.value || '').trim().toUpperCase() || 'AAPL';
-          const key = (apiKeyInput?.value || '').trim();
-          if (!key) {
-            if (fetchStatus) { fetchStatus.textContent = '请先输入 API Key'; fetchStatus.className = 'stock-fetch-status error'; }
-            return;
-          }
-          // Save key
-          localStorage.setItem('av_api_key', key);
-
-          if (fetchStatus) { fetchStatus.textContent = '加载中...'; fetchStatus.className = 'stock-fetch-status loading'; }
-          fetchBtn.disabled = true;
-
-          try {
-            const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data['Error Message']) {
-              if (fetchStatus) { fetchStatus.textContent = 'API Key 无效或股票代码错误'; fetchStatus.className = 'stock-fetch-status error'; }
-              fetchBtn.disabled = false;
-              return;
-            }
-            if (data['Note']) {
-              if (fetchStatus) { fetchStatus.textContent = 'API 调用次数超限，请稍后再试'; fetchStatus.className = 'stock-fetch-status error'; }
-              fetchBtn.disabled = false;
-              return;
-            }
-
-            const series = data['Time Series (Daily)'];
-            if (!series) {
-              if (fetchStatus) { fetchStatus.textContent = '未获取到数据'; fetchStatus.className = 'stock-fetch-status error'; }
-              fetchBtn.disabled = false;
-              return;
-            }
-
-            // Parse latest 60 entries
-            const dates = Object.keys(series).sort().slice(-60);
-            const recs = loadRecords();
-
-            // Keep only predictions (don't overwrite manual predictions)
-            const predictions = recs.filter(r => r.type === 'prediction');
-
-            // Clear old actual records for this symbol
-            const others = recs.filter(r => r.type === 'prediction' || r.name.toUpperCase() !== symbol);
-
-            const newRecs = dates.map((date, i) => ({
-              id: Date.now() + i,
-              name: symbol,
-              date,
-              price: parseFloat(series[date]['4. close']),
-              note: i === dates.length - 1 ? '最新' : '',
-              type: 'actual',
-            }));
-
-            const merged = [...others, ...predictions, ...newRecs];
-            // Deduplicate by date+name
-            const seen = new Set();
-            const deduped = [];
-            merged.forEach(r => {
-              const key = r.date + '|' + r.name + '|' + r.type;
-              if (!seen.has(key)) { seen.add(key); deduped.push(r); }
-            });
-
-            saveRecords(deduped);
-            renderStock(deduped);
-            if (fetchStatus) { fetchStatus.textContent = `✓ 已获取 ${dates.length} 条数据`; fetchStatus.className = 'stock-fetch-status success'; }
-          } catch (e) {
-            if (fetchStatus) { fetchStatus.textContent = '网络错误，请检查连接'; fetchStatus.className = 'stock-fetch-status error'; }
-          }
-          fetchBtn.disabled = false;
-        });
-      }
-
-      let records = loadRecords();
-      renderStock(records);
-
-      if (addBtn) {
-        addBtn.addEventListener('click', () => {
-          const name = (nameInput?.value || '').trim().toUpperCase() || '未知';
-          const date = dateInput?.value || '';
-          const price = parseFloat(priceInput?.value);
-          const note = noteInput?.value || '';
-          const type = document.querySelector('input[name="recType"]:checked')?.value || 'actual';
-
-          if (!date || isNaN(price)) { addBtn.style.opacity = '0.5'; setTimeout(() => addBtn.style.opacity = '', 300); return; }
-
-          const recs = loadRecords();
-          recs.push({ id: Date.now(), name, date, price, note, type });
-          saveRecords(recs);
-          renderStock(recs);
-          if (priceInput) priceInput.value = '';
-          if (noteInput) noteInput.value = '';
-        });
-      }
-
-      if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-          if (confirm('清空所有股票追踪记录？')) {
-            saveRecords([]);
-            renderStock([]);
-          }
-        });
-      }
-    })();
-
-    // ============================================================
-    // QUANT STRATEGY ENGINE
-    // ============================================================
-
-    // --- Strategy Definitions ---
-    const STRATEGIES = {
-      ma_cross: {
-        name: '双均线交叉',
-        calcSignal: (prices, params) => {
-          const short = params.shortPeriod || 5;
-          const long = params.longPeriod || 20;
-          if (prices.length < long + 1) return 'HOLD';
-          const maShort = prices.slice(-short).reduce((a, b) => a + b, 0) / short;
-          const maLong = prices.slice(-long).reduce((a, b) => a + b, 0) / long;
-          const prevShort = prices.slice(-short - 1, -1).reduce((a, b) => a + b, 0) / short;
-          const prevLong = prices.slice(-long - 1, -1).reduce((a, b) => a + b, 0) / long;
-          if (prevShort <= prevLong && maShort > maLong) return 'BUY';
-          if (prevShort >= prevLong && maShort < maLong) return 'SELL';
-          return 'HOLD';
-        },
-      },
-      rsi: {
-        name: 'RSI超买超卖',
-        calcSignal: (prices, params) => {
-          const period = params.rsiPeriod || 14;
-          if (prices.length < period + 1) return 'HOLD';
-          const changes = [];
-          for (let i = prices.length - period; i < prices.length; i++) changes.push(prices[i] - prices[i - 1]);
-          const avgGain = changes.filter(c => c > 0).reduce((a, b) => a + b, 0) / period;
-          const avgLoss = Math.abs(changes.filter(c => c < 0).reduce((a, b) => a + b, 0)) / period;
-          const rsi = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-          const oversold = params.oversold || 30;
-          const overbought = params.overbought || 70;
-          if (rsi < oversold) return 'BUY';
-          if (rsi > overbought) return 'SELL';
-          return 'HOLD';
-        },
-      },
-      bollinger: {
-        name: '布林带策略',
-        calcSignal: (prices, params) => {
-          const period = params.bbPeriod || 20;
-          const stdMult = params.bbStd || 2;
-          if (prices.length < period + 1) return 'HOLD';
-          const slice = prices.slice(-period);
-          const mean = slice.reduce((a, b) => a + b, 0) / period;
-          const std = Math.sqrt(slice.reduce((a, b) => a + (b - mean) ** 2, 0) / period);
-          const lower = mean - stdMult * std;
-          const upper = mean + stdMult * std;
-          const price = prices[prices.length - 1];
-          if (price <= lower) return 'BUY';
-          if (price >= upper) return 'SELL';
-          return 'HOLD';
-        },
-      },
-      grid: {
-        name: '网格交易',
-        calcSignal: (prices, params, gridState) => {
-          const levels = params.gridLevels || 5;
-          const spacing = (params.gridSpacing || 2) / 100;
-          const price = prices[prices.length - 1];
-          if (!gridState.basePrice) gridState.basePrice = price;
-          const gridSize = gridState.basePrice * spacing;
-          const currentLevel = Math.round((gridState.basePrice - price) / gridSize);
-          const clamped = Math.max(-levels, Math.min(levels, currentLevel));
-          if (clamped > gridState.lastLevel) return 'BUY';
-          if (clamped < gridState.lastLevel) return 'SELL';
-          return 'HOLD';
-        },
-        initState: () => ({ basePrice: 0, lastLevel: 0 }),
-      },
-      threshold: {
-        name: '自定义涨跌幅',
-        calcSignal: (prices, params) => {
-          if (prices.length < 2) return 'HOLD';
-          const prev = prices[prices.length - 2];
-          const curr = prices[prices.length - 1];
-          const change = ((curr - prev) / prev) * 100;
-          const buyThresh = params.buyThresh || 3;
-          const sellThresh = params.sellThresh || 6;
-          if (change <= -buyThresh) return 'BUY';
-          if (change >= sellThresh) return 'SELL';
-          return 'HOLD';
-        },
-      },
-    };
-
-    // --- Backtest Engine ---
-    function runBacktest(prices, strategyId, params, initialCapital = 100000) {
-      const strategy = STRATEGIES[strategyId];
-      if (!strategy) return null;
-
-      const gridState = strategy.initState ? strategy.initState() : {};
-      let cash = initialCapital;
-      let shares = 0;
-      let trades = [];
-      let equity = [initialCapital];
-      let wins = 0, losses = 0;
-
-      for (let i = 1; i < prices.length; i++) {
-        const histPrices = prices.slice(0, i + 1);
-        const signal = strategy.calcSignal(histPrices, params, gridState);
-        const price = prices[i];
-
-        if (signal === 'BUY' && cash > price) {
-          const buyAmt = cash * 0.5;
-          const qty = Math.floor(buyAmt / price);
-          if (qty > 0) {
-            cash -= qty * price;
-            shares += qty;
-            trades.push({ date: i, type: 'buy', price, qty });
-          }
-        } else if (signal === 'SELL' && shares > 0) {
-          cash += shares * price;
-          const pnl = (price - trades.filter(t => t.type === 'buy').pop()?.price || price) * shares;
-          if (pnl >= 0) wins++; else losses++;
-          trades.push({ date: i, type: 'sell', price, qty: shares });
-          shares = 0;
-        }
-
-        const totalEquity = cash + shares * price;
-        equity.push(totalEquity);
-      }
-
-      // Final value
-      const finalVal = cash + shares * prices[prices.length - 1];
-      const totalReturn = ((finalVal - initialCapital) / initialCapital) * 100;
-
-      // Max drawdown
-      let peak = equity[0], maxDD = 0;
-      equity.forEach(e => { peak = Math.max(peak, e); maxDD = Math.max(maxDD, (peak - e) / peak); });
-
-      // Win rate
-      const totalTrades = wins + losses;
-      const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
-
-      // Sharpe ratio (simplified)
-      const returns = [];
-      for (let i = 1; i < equity.length; i++) returns.push((equity[i] - equity[i - 1]) / equity[i - 1]);
-      const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-      const stdReturn = Math.sqrt(returns.reduce((a, b) => a + (b - avgReturn) ** 2, 0) / returns.length);
-      const sharpe = stdReturn > 0 ? (avgReturn / stdReturn) * Math.sqrt(252) : 0;
-
-      return {
-        totalReturn,
-        finalValue: finalVal,
-        maxDrawdown: maxDD * 100,
-        winRate,
-        totalTrades: trades.length,
-        sharpe,
-        equity,
-        trades,
-      };
-    }
-
-    // --- Strategy Params UI ---
-    function switchStrategy(strategyId) {
-      document.querySelectorAll('.param-group').forEach(g => {
-        g.style.display = g.dataset.strategy === strategyId ? '' : 'none';
-      });
-    }
-
-    function getStrategyParams(strategyId) {
-      const group = document.querySelector(`.param-group[data-strategy="${strategyId}"]`);
-      if (!group) return {};
-      const params = {};
-      group.querySelectorAll('[data-param]').forEach(input => {
-        params[input.dataset.param] = parseFloat(input.value) || input.value;
-      });
-      return params;
-    }
-
-    // --- Render Backtest ---
-    function renderBacktest(result) {
-      const container = document.getElementById('botBacktestResults');
-      const grid = document.getElementById('botBacktestGrid');
-      const chart = document.getElementById('botEquityChart');
-      const statusEl = document.getElementById('botStatus');
-      const runBtn = document.getElementById('botRunBtn');
-      const autoBtn = document.getElementById('botAutoToggle');
-      const statusText = document.getElementById('botRunStatus');
-
-      if (!result) {
-        container.style.display = 'none';
-        return;
-      }
-
-      container.style.display = 'block';
-      const fmt = (v) => (v >= 0 ? '+' : '') + v.toFixed(2);
-      grid.innerHTML = `
-        <div class="bot-backtest-card">
-          <div class="bt-value ${result.totalReturn >= 0 ? 'positive' : 'negative'}">${fmt(result.totalReturn)}%</div>
-          <div class="bt-label">总收益率</div>
+          <div class="ielts-card">
+            <div class="ielts-card-title">地图题方位词整理</div>
+            <div class="ielts-card-body">
+              opposite, adjacent, intersection,绕过, 入口处, 走廊尽头, 左侧第二个门
+            </div>
+            <div class="ielts-card-date">2026.06.18</div>
+          </div>
         </div>
-        <div class="bot-backtest-card">
-          <div class="bt-value neutral">$${result.finalValue.toFixed(0)}</div>
-          <div class="bt-label">最终资产</div>
+      </div>
+
+      <!-- Section: Reading -->
+      <div class="ielts-section">
+        <div class="ielts-section-header">
+          <span class="ielts-section-icon">📖</span>
+          <span class="ielts-section-title">阅读 Reading</span>
         </div>
-        <div class="bot-backtest-card">
-          <div class="bt-value neutral">${result.sharpe.toFixed(2)}</div>
-          <div class="bt-label">夏普比率</div>
+        <div class="ielts-card-list">
+          <div class="ielts-card">
+            <div class="ielts-card-title">Heading 匹配题技巧</div>
+            <div class="ielts-card-body">
+              先读 headings 划关键词 → 读段落首尾句 → 匹配同义替换。NB 选项可复用，注意审题。
+            </div>
+            <div class="ielts-card-date">2026.06.19</div>
+          </div>
+          <div class="ielts-card">
+            <div class="ielts-card-title">True/False/Not Given 判断</div>
+            <div class="ielts-card-body">
+              True=原文明确一致; False=原文明确矛盾; NG=原文未提及或无法推断。切忌过度推理。
+            </div>
+            <div class="ielts-card-date">2026.06.17</div>
+          </div>
         </div>
-        <div class="bot-backtest-card">
-          <div class="bt-value ${result.maxDrawdown > 20 ? 'negative' : 'neutral'}">${result.maxDrawdown.toFixed(1)}%</div>
-          <div class="bt-label">最大回撤</div>
+      </div>
+
+      <!-- Section: Writing -->
+      <div class="ielts-section">
+        <div class="ielts-section-header">
+          <span class="ielts-section-icon">✏️</span>
+          <span class="ielts-section-title">写作 Writing</span>
         </div>
-        <div class="bot-backtest-card">
-          <div class="bt-value ${result.winRate >= 50 ? 'positive' : 'negative'}">${result.winRate.toFixed(0)}%</div>
-          <div class="bt-label">胜率</div>
+        <div class="ielts-card-list">
+          <div class="ielts-card">
+            <div class="ielts-card-title">Task 1 小作文结构</div>
+            <div class="ielts-card-body">
+              首段改写题目 → 总体趋势概述 → 细节数据对比。注意时态和数据的准确描述。
+            </div>
+            <div class="ielts-card-date">2026.06.20</div>
+          </div>
+          <div class="ielts-card">
+            <div class="ielts-card-title">Task 2 大作文模板</div>
+            <div class="ielts-card-body">
+              Introduction (背景+观点) → Body 1 (论点+展开+例证) → Body 2 (转折+论据) → Conclusion (重述立场)
+            </div>
+            <div class="ielts-card-date">2026.06.16</div>
+          </div>
         </div>
-        <div class="bot-backtest-card">
-          <div class="bt-value neutral">${result.totalTrades}</div>
-          <div class="bt-label">交易次数</div>
+      </div>
+
+      <!-- Section: Speaking -->
+      <div class="ielts-section">
+        <div class="ielts-section-header">
+          <span class="ielts-section-icon">🗣️</span>
+          <span class="ielts-section-title">口语 Speaking</span>
         </div>
-      `;
+        <div class="ielts-card-list">
+          <div class="ielts-card">
+            <div class="ielts-card-title">Part 1 常考话题</div>
+            <div class="ielts-card-body">
+              Work/Study, Hometown, Home/Accommodation, Hobbies, Travel, Food, Weather
+            </div>
+            <div class="ielts-card-date">2026.06.18</div>
+          </div>
+          <div class="ielts-card">
+            <div class="ielts-card-title">Part 2 人物类素材</div>
+            <div class="ielts-card-body">
+              描述一位有影响力的家人/朋友/老师 — 外貌特征、性格品质、具体事例、对我的影响
+            </div>
+            <div class="ielts-card-date">2026.06.15</div>
+          </div>
+        </div>
+      </div>
 
-      // Equity curve
-      const eq = result.equity;
-      const minEq = Math.min(...eq), maxEq = Math.max(...eq), range = maxEq - minEq || 1;
-      chart.innerHTML = '';
-      eq.forEach((v, i) => {
-        if (i % Math.max(1, Math.floor(eq.length / 80)) !== 0 && i !== eq.length - 1) return;
-        const h = ((v - minEq) / range * 90 + 5);
-        const bar = document.createElement('div');
-        bar.className = 'eq-bar';
-        bar.style.height = h + '%';
-        bar.style.background = v >= eq[0] ? 'rgba(78,205,196,0.6)' : 'rgba(255,107,107,0.4)';
-        chart.appendChild(bar);
-      });
+      <!-- Section: Mistakes / Review -->
+      <div class="ielts-section">
+        <div class="ielts-section-header">
+          <span class="ielts-section-icon">⚠️</span>
+          <span class="ielts-section-title">错题复盘</span>
+        </div>
+        <div class="ielts-card-list">
+          <div class="ielts-card">
+            <div class="ielts-card-title">听力拼写错误汇总</div>
+            <div class="ielts-card-body">
+              accommodation (双c双m), separate (不要写成seperate), environment (nvironment), government
+            </div>
+            <div class="ielts-card-date">2026.06.20</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      // Enable live trading
-      runBtn.disabled = false;
-      autoBtn.disabled = false;
-      if (statusText) statusText.textContent = '✅ 回测通过，可运行实盘';
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="app.js"></script>
+
+  <!-- Finance Modal -->
+  <div class="finance-modal" id="financeModal">
+    <div class="finance-modal-box">
+      <h3>💰 记一笔</h3>
+      <label>类型</label>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <label style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);text-align:center;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.2s" id="finTypeExpense">
+          <input type="radio" name="finType" value="expense" checked id="finTypeExpenseRadio" style="display:none" /> 💸 支出
+        </label>
+        <label style="flex:1;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);text-align:center;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.2s;color:rgba(255,255,255,0.3)" id="finTypeIncome">
+          <input type="radio" name="finType" value="income" id="finTypeIncomeRadio" style="display:none" /> 💰 收入
+        </label>
+      </div>
+      <label>类别</label>
+      <select id="finCat">
+        <optgroup label="💸 支出">
+          <option value="rent">🏠 租房</option>
+          <option value="food">🍜 餐饮</option>
+          <option value="transport">🚇 交通</option>
+          <option value="shopping">🛒 购物</option>
+          <option value="hobby">🎮 兴趣爱好</option>
+          <option value="bill">⚡ 水电</option>
+          <option value="other">📌 其他</option>
+        </optgroup>
+        <optgroup label="💰 收入">
+          <option value="intern">💼 实习收入</option>
+          <option value="parttime">📝 兼职收入</option>
+          <option value="shop">🏪 店铺收入</option>
+        </optgroup>
+      </select>
+      <label>金额 (¥)</label>
+      <input id="finAmount" type="number" placeholder="0" step="0.01" />
+      <label>备注</label>
+      <input id="finNote" type="text" placeholder="eg. 6月房租" />
+      <label>日期</label>
+      <input id="finDate" type="date" />
+      <div class="finance-modal-actions">
+        <button class="btn-cancel" id="finCancel">取消</button>
+        <button class="btn-save" id="finSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
     }
-
-    // --- Live Trading ---
-    let botConnected = false;
-    let botAutoLoop = null;
-
-    function getBackendUrl() {
-      return (document.getElementById('botBackendUrl')?.value || 'http://localhost:3001').replace(/\/+$/, '');
-    }
-
-    async function apiPost(path, body) {
-      const res = await fetch(getBackendUrl() + path, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    }
-    async function apiGet(path) {
-      const res = await fetch(getBackendUrl() + path);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    }
-
-    async function connectBackend() {
-      const statusEl = document.getElementById('botConnStatus');
-      const btn = document.getElementById('botConnectBtn');
-      statusEl.textContent = '连接中...'; statusEl.style.color = 'rgba(255,255,255,0.3)';
-      if (btn) btn.disabled = true;
-      try {
-        const result = await apiPost('/api/connect');
-        if (result.connected) {
-          botConnected = true;
-          statusEl.textContent = '✅ 已连接'; statusEl.style.color = '#4ecdc4';
-          if (btn) btn.textContent = '🔌 已连接';
-        } else {
-          botConnected = false;
-          statusEl.textContent = '❌ ' + (result.message || '失败'); statusEl.style.color = '#ff6b6b';
-        }
-      } catch {
-        botConnected = false;
-        statusEl.textContent = '❌ 无法连接后端'; statusEl.style.color = '#ff6b6b';
-      }
-      if (btn) btn.disabled = false;
-    }
-
-    async function runLiveTrade() {
-      const statusEl = document.getElementById('botStatus');
-      if (!botConnected) {
-        statusEl.textContent = '请先连接后端服务'; statusEl.className = 'bot-status error'; return;
-      }
-      const strategyId = document.getElementById('botStrategy').value;
-      const symbol = document.getElementById('botSymbol').value.trim().toUpperCase() || 'AAPL';
-      const params = getStrategyParams(strategyId);
-
-      statusEl.textContent = `📡 执行 ${STRATEGIES[strategyId]?.name || strategyId} 策略...`;
-      statusEl.className = 'bot-status info';
-
-      try {
-        await apiPost('/api/bot/config', { symbol, strategy: strategyId, ...params });
-        const result = await apiPost('/api/bot/execute');
-        if (result.action === 'buy') {
-          statusEl.textContent = `🔴 买入信号 — ${result.symbol} @ $${result.price?.toFixed(2) || '?'}`;
-          statusEl.className = 'bot-status success';
-        } else if (result.action === 'sell') {
-          statusEl.textContent = `🟢 卖出信号 — ${result.symbol}`;
-          statusEl.className = 'bot-status success';
-        } else {
-          statusEl.textContent = `⏸ ${result.reason || '无信号'}`;
-          statusEl.className = 'bot-status info';
-        }
-      } catch (err) {
-        statusEl.textContent = '❌ ' + err.message;
-        statusEl.className = 'bot-status error';
-      }
-    }
-
-    function toggleAutoLoop() {
-      const btn = document.getElementById('botAutoToggle');
-      if (botAutoLoop) {
-        clearInterval(botAutoLoop); botAutoLoop = null;
-        if (btn) btn.textContent = '▶ 启动循环';
-        document.getElementById('botStatus').textContent = '⏹ 循环停止';
-        return;
-      }
-      botAutoLoop = setInterval(async () => { if (botConnected) await runLiveTrade(); }, 60000);
-      if (btn) btn.textContent = '⏹ 停止循环';
-      runLiveTrade();
-    }
-
-    function resetBotState() {
-      if (!confirm('重置交易状态？')) return;
-      if (botAutoLoop) { clearInterval(botAutoLoop); botAutoLoop = null; }
-      document.getElementById('botAutoToggle').textContent = '▶ 启动循环';
-      document.getElementById('botStatus').textContent = '已重置';
-      document.getElementById('botStatus').className = 'bot-status';
-      document.getElementById('botTrades').innerHTML = '<div class="bot-empty">暂无交易记录</div>';
-      document.getElementById('botRunBtn').disabled = true;
-      document.getElementById('botAutoToggle').disabled = true;
-      document.getElementById('botRunStatus').textContent = '已重置';
-    }
-
-    // --- Init ---
-    (function initBot() {
-      // Strategy switcher
-      const strategySelect = document.getElementById('botStrategy');
-      strategySelect?.addEventListener('change', () => switchStrategy(strategySelect.value));
-
-      // Backtest
-      document.getElementById('botBacktestBtn')?.addEventListener('click', async () => {
-        const statusEl = document.getElementById('botStatus');
-        const symbol = document.getElementById('botSymbol').value.trim().toUpperCase() || 'AAPL';
-        const strategyId = strategySelect.value;
-        const params = getStrategyParams(strategyId);
-        const capital = parseFloat(document.getElementById('botCapital')?.value) || 100000;
-
-        // Get API key from stock tracker
-        const apiKey = document.getElementById('stockApiKey')?.value;
-        if (!apiKey) { statusEl.textContent = '请先在个股追踪输入 Alpha Vantage API Key'; statusEl.className = 'bot-status error'; return; }
-
-        statusEl.textContent = `📡 获取 ${symbol} 历史数据...`; statusEl.className = 'bot-status info';
-
-        try {
-          const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${apiKey}`;
-          const res = await fetch(url);
-          const data = await res.json();
-
-          if (data['Error Message']) { statusEl.textContent = 'API Key 无效'; statusEl.className = 'bot-status error'; return; }
-          const series = data['Time Series (Daily)'];
-          if (!series) { statusEl.textContent = '未获取到数据'; statusEl.className = 'bot-status error'; return; }
-
-          const dates = Object.keys(series).sort();
-          const prices = dates.map(d => parseFloat(series[d]['4. close']));
-
-          if (prices.length < 30) { statusEl.textContent = '数据不足（需至少30条）'; statusEl.className = 'bot-status error'; return; }
-
-          const result = runBacktest(prices, strategyId, params, capital);
-          renderBacktest(result);
-          statusEl.textContent = `✅ 回测完成 — ${STRATEGIES[strategyId]?.name} on ${symbol}`;
-          statusEl.className = 'bot-status success';
-        } catch (err) {
-          statusEl.textContent = '❌ ' + err.message; statusEl.className = 'bot-status error';
-        }
-      });
-
-      // Other buttons
-      document.getElementById('botConnectBtn')?.addEventListener('click', connectBackend);
-      document.getElementById('botRunBtn')?.addEventListener('click', runLiveTrade);
-      document.getElementById('botAutoToggle')?.addEventListener('click', toggleAutoLoop);
-      document.getElementById('botResetBtn')?.addEventListener('click', resetBotState);
-
-      // Init UI
-      switchStrategy(strategySelect?.value || 'ma_cross');
-    })();
-  </script>
   </script>
 </body>
 </html>
