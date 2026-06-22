@@ -1389,6 +1389,16 @@
     function loadFinance() { try { return JSON.parse(localStorage.getItem(FINANCE_KEY)) || []; } catch { return []; } }
     function saveFinance(data) { localStorage.setItem(FINANCE_KEY, JSON.stringify(data)); }
 
+    // Seed default entries on first visit
+    (function seedFinance() {
+      const existing = localStorage.getItem(FINANCE_KEY);
+      if (existing) return;
+      const defaults = [
+        { id: Date.now() + 1, cat: 'rent', amount: 5556, note: 'SSB共享卫浴 · Village Apartments / Rye Hall 全年住宿 (€5556)', date: '2026-09-01' },
+      ];
+      saveFinance(defaults);
+    })();
+
     function renderFinance() {
       const list = document.getElementById('financeList');
       const monthTotal = document.getElementById('financeMonthTotal');
