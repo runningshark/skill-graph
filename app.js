@@ -1457,11 +1457,23 @@
     function loadHousing() { try { return JSON.parse(localStorage.getItem(HOUSING_KEY)) || []; } catch { return []; } }
     function saveHousing(data) { localStorage.setItem(HOUSING_KEY, JSON.stringify(data)); }
 
-    // Seed default entries on first visit
-    !localStorage.getItem(HOUSING_KEY) && saveHousing([
-      { id: Date.now() + 1, name: 'SSB 共享卫浴 (Shared Bathroom)', desc: 'Village Apartments / Rye Hall · 全年 €5556 · 申请时直接选 SSB', tags: ['校内', '共享卫浴'] },
-      { id: Date.now() + 2, name: '梅努斯大学学校宿舍', desc: 'Maynooth University 校内宿舍总览', url: 'https://www.maynoothuniversity.ie/student-residences/rooms', tags: ['校内', '梅努斯'] },
-    ]);
+    // Ensure default entries exist (merge missing ones)
+    function ensureHousingDefaults() {
+      const DEFAULTS = [
+        { _key: 'ssb', name: 'SSB 共享卫浴 (Shared Bathroom)', desc: 'Village Apartments / Rye Hall · 全年 €5556 · 申请时直接选 SSB', tags: ['校内', '共享卫浴'] },
+        { _key: 'maynooth', name: '梅努斯大学学校宿舍', desc: 'Maynooth University 校内宿舍总览', url: 'https://www.maynoothuniversity.ie/student-residences/rooms', tags: ['校内', '梅努斯'] },
+      ];
+      let data = loadHousing();
+      let changed = false;
+      DEFAULTS.forEach(def => {
+        if (!data.some(d => d._key === def._key)) {
+          data.push({ ...def, id: Date.now() + Math.floor(Math.random() * 10000) });
+          changed = true;
+        }
+      });
+      if (changed) saveHousing(data);
+    }
+    ensureHousingDefaults();
 
     function renderHousing() {
       const list = document.getElementById('housingRefList');
