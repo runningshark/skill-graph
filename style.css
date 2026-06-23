@@ -742,20 +742,193 @@
       border: 1px solid rgba(255,255,255,0.06);
       color: rgba(255,255,255,0.45);
     }
-    .about-reflection {
-      background: rgba(124,109,240,0.06);
-      border: 1px solid rgba(124,109,240,0.12);
-      border-radius: 12px;
-      padding: 20px 24px;
-      margin-top: 4px;
+    .about-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
     }
-    .about-reflection p {
+    .about-section-header h2 { margin-bottom: 0; }
+    .reflection-add-btn {
+      background: none; border: 1px solid rgba(124,109,240,0.25);
+      color: rgba(124,109,240,0.7);
+      font-size: 12px; font-weight: 500;
+      padding: 6px 14px; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .reflection-add-btn:hover {
+      background: rgba(124,109,240,0.1);
+      border-color: rgba(124,109,240,0.4);
+      color: rgba(124,109,240,0.9);
+    }
+
+    .reflection-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .reflection-item {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 16px 20px;
+      position: relative;
+      transition: all 0.3s ease;
+      animation: reflectIn 0.4s ease both;
+    }
+    @keyframes reflectIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reflection-item:hover {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.07);
+    }
+    .reflection-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .reflection-date {
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      font-weight: 500;
+    }
+    .reflection-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .reflection-tag.生活 { background: rgba(78,205,196,0.12); color: rgba(78,205,196,0.7); }
+    .reflection-tag.工作 { background: rgba(124,109,240,0.12); color: rgba(124,109,240,0.7); }
+    .reflection-tag.学习 { background: rgba(240,192,64,0.12); color: rgba(240,192,64,0.7); }
+    .reflection-tag.感悟 { background: rgba(255,107,107,0.12); color: rgba(255,107,107,0.7); }
+
+    .reflection-content {
       font-size: 14px;
       line-height: 1.8;
-      color: rgba(255,255,255,0.65);
+      color: rgba(255,255,255,0.55);
+      padding-right: 28px;
     }
-    .about-reflection p + p { margin-top: 14px; }
-    .about-reflection strong { color: #7c6df0; }
+
+    .reflection-del {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: none; border: none;
+      color: rgba(255,255,255,0.06);
+      font-size: 13px; cursor: pointer;
+      padding: 4px 6px; border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .reflection-del:hover { color: #ff6b6b; background: rgba(255,107,107,0.1); }
+
+    .reflection-empty {
+      text-align: center;
+      padding: 32px;
+      color: rgba(255,255,255,0.08);
+      font-size: 13px;
+    }
+
+    /* Reflection Modal */
+    .reflection-modal {
+      position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .reflection-modal.open { opacity: 1; pointer-events: auto; }
+    .reflection-modal-box {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 28px;
+      width: 90%; max-width: 440px;
+      max-height: 80vh; overflow-y: auto;
+    }
+    .reflection-modal-box h3 {
+      font-size: 17px; font-weight: 600;
+      margin-bottom: 20px;
+      color: rgba(255,255,255,0.8);
+    }
+    .reflection-form-group { margin-bottom: 16px; }
+    .reflection-form-group label {
+      display: block;
+      font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .reflection-cats { display: flex; gap: 6px; }
+    .reflection-cat-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.3);
+      font-size: 12px; font-weight: 500;
+      padding: 6px 14px; border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .reflection-cat-btn:hover { background: rgba(255,255,255,0.06); }
+    .reflection-cat-btn.active {
+      background: rgba(124,109,240,0.15);
+      border-color: rgba(124,109,240,0.3);
+      color: rgba(124,109,240,0.8);
+    }
+    .reflection-textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px; line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+      font-family: inherit;
+      resize: vertical; min-height: 80px;
+      transition: border-color 0.2s;
+    }
+    .reflection-textarea:focus { outline: none; border-color: rgba(124,109,240,0.3); }
+    .reflection-input {
+      width: 100%; box-sizing: border-box;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .reflection-input:focus { outline: none; border-color: rgba(124,109,240,0.3); }
+    .reflection-modal-actions {
+      display: flex; gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .reflection-btn {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .reflection-btn.cancel {
+      background: none; border: 1px solid rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.35);
+    }
+    .reflection-btn.cancel:hover { background: rgba(255,255,255,0.04); }
+    .reflection-btn.save {
+      background: rgba(124,109,240,0.15);
+      border: 1px solid rgba(124,109,240,0.3);
+      color: rgba(124,109,240,0.8);
+    }
+    .reflection-btn.save:hover { background: rgba(124,109,240,0.25); }
+
+    @media (max-width: 640px) {
+      .reflection-modal-box { padding: 20px; }
+      .reflection-cats { flex-wrap: wrap; }
+    }
 
     /* === HEALTH PAGE === */
     #page-health {

@@ -1514,4 +1514,85 @@
     finModal?.addEventListener('click', e => { if (e.target === finModal) finModal.classList.remove('open'); });
 
     renderFinance();
+
+    // ============================================================
+    // REFLECTIONS (个人感悟)
+    // ============================================================
+    const REFLECT_KEY = 'km_reflections';
+    function loadReflect() { try { return JSON.parse(localStorage.getItem(REFLECT_KEY)) || []; } catch { return []; } }
+    function saveReflect(data) { localStorage.setItem(REFLECT_KEY, JSON.stringify(data)); }
+
+    // Seed defaults
+    !localStorage.getItem(REFLECT_KEY) && saveReflect([
+      { id: Date.now() + 1, date: '2026-06-20', cat: '生活', content: '游戏究竟为了什么？我玩游戏是不是浪费了时间？游戏可以玩，但要看看它有没有影响你的生活。刷短视频也一样——这些都是算法精心设计的，目的是把你的时间留在屏幕上。不要让它影响你的真实生活。给自己定个规矩：每天最多一个半小时。时间到了，就该放下屏幕，去做那些真正重要的事。' },
+      { id: Date.now() + 2, date: '2026-06-22', cat: '工作', content: '12小时的工作能不做就不要做。假如你九点上班，要上到晚上九点，除了工作就是睡觉，根本没有多余的时间去学习。一段时间还好，但如果整个人生都是这样的话，怎么有时间去提升自己的人生价值？' },
+    ]);
+
+    function renderReflect() {
+      const list = document.getElementById('reflectionList');
+      if (!list) return;
+      const data = loadReflect();
+      if (data.length === 0) {
+        list.innerHTML = '<div class="reflection-empty">还没有记录，点击右上角 + 记录 开始写感悟</div>';
+        return;
+      }
+      const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      list.innerHTML = sorted.map(item => `
+        <div class="reflection-item">
+          <div class="reflection-meta">
+            <span class="reflection-date">${item.date}</span>
+            <span class="reflection-tag ${item.cat}">${item.cat}</span>
+          </div>
+          <div class="reflection-content">${item.content}</div>
+          <button class="reflection-del" data-id="${item.id}">✕</button>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.reflection-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          let data = loadReflect();
+          data = data.filter(d => d.id !== id);
+          saveReflect(data);
+          renderReflect();
+        });
+      });
+    }
+
+    // Modal
+    const reflModal = document.getElementById('reflectionModal');
+    document.getElementById('reflectionAddBtn')?.addEventListener('click', () => {
+      if (!reflModal) return;
+      reflModal.classList.add('open');
+      const d = new Date();
+      document.getElementById('reflectionDate').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      document.getElementById('reflectionInput').value = '';
+      document.querySelectorAll('.reflection-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === '生活'));
+      setTimeout(() => document.getElementById('reflectionInput').focus(), 100);
+    });
+
+    // Category selection
+    document.getElementById('reflectionCats')?.addEventListener('click', e => {
+      const btn = e.target.closest('.reflection-cat-btn');
+      if (!btn) return;
+      document.querySelectorAll('.reflection-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+
+    document.getElementById('reflectionCancel')?.addEventListener('click', () => reflModal?.classList.remove('open'));
+    document.getElementById('reflectionSave')?.addEventListener('click', () => {
+      const content = document.getElementById('reflectionInput')?.value?.trim();
+      const date = document.getElementById('reflectionDate')?.value;
+      const catBtn = document.querySelector('.reflection-cat-btn.active');
+      const cat = catBtn?.dataset?.cat || '感悟';
+      if (!content || !date) return;
+      const data = loadReflect();
+      data.push({ id: Date.now(), date, cat, content });
+      saveReflect(data);
+      renderReflect();
+      reflModal?.classList.remove('open');
+    });
+    reflModal?.addEventListener('click', e => { if (e.target === reflModal) reflModal.classList.remove('open'); });
+
+    renderReflect();
   

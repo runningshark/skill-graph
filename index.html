@@ -766,25 +766,39 @@
       </div>
 
       <div class="about-section">
-        <h2>💭 个人感悟</h2>
-        <div class="about-reflection">
-          <p>
-            游戏究竟为了什么？我玩游戏是不是浪费了时间？
-          </p>
-          <p>
-            游戏可以玩，但要看看它有没有影响你的生活。刷短视频也一样——这些都是算法精心设计的，
-            目的是把你的时间留在屏幕上。不要让它影响你的真实生活。
-          </p>
-           <p>
-             给自己定个规矩：<strong>每天最多一个半小时</strong>。时间到了，就该放下屏幕，
-             去做那些真正重要的事。
-           </p>
-           <p>
-             12小时的工作能不做就不要做。假如你九点上班，要上到晚上九点，除了工作就是睡觉，
-             根本没有多余的时间去学习。一段时间还好，但如果整个人生都是这样的话，
-             怎么有时间去提升自己的人生价值？
-           </p>
-         </div>
+        <div class="about-section-header">
+          <h2>💭 个人感悟</h2>
+          <button class="reflection-add-btn" id="reflectionAddBtn">+ 记录</button>
+        </div>
+        <div class="reflection-list" id="reflectionList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reflection Modal -->
+  <div class="reflection-modal" id="reflectionModal">
+    <div class="reflection-modal-box">
+      <h3>✏️ 写一条感悟</h3>
+      <div class="reflection-form-group">
+        <label>分类</label>
+        <div class="reflection-cats" id="reflectionCats">
+          <button class="reflection-cat-btn active" data-cat="生活">生活</button>
+          <button class="reflection-cat-btn" data-cat="工作">工作</button>
+          <button class="reflection-cat-btn" data-cat="学习">学习</button>
+          <button class="reflection-cat-btn" data-cat="感悟">感悟</button>
+        </div>
+      </div>
+      <div class="reflection-form-group">
+        <label>内容</label>
+        <textarea class="reflection-textarea" id="reflectionInput" rows="4" placeholder="写点什么…"></textarea>
+      </div>
+      <div class="reflection-form-group">
+        <label>日期</label>
+        <input class="reflection-input" id="reflectionDate" type="date" />
+      </div>
+      <div class="reflection-modal-actions">
+        <button class="reflection-btn cancel" id="reflectionCancel">取消</button>
+        <button class="reflection-btn save" id="reflectionSave">保存</button>
       </div>
     </div>
   </div>

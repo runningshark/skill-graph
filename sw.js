@@ -1,4 +1,4 @@
-const CACHE = 'km-cache-v2';
+const CACHE = 'km-cache-v3';
 const URLS = [
   '/skill-graph/',
   '/skill-graph/index.html',
@@ -24,8 +24,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for JS/CSS to always get latest
-  if (e.request.destination === 'script' || e.request.destination === 'style') {
+  // Network-first for HTML/JS/CSS to always get latest
+  if (e.request.destination === 'document' || e.request.destination === 'script' || e.request.destination === 'style') {
     e.respondWith(
       fetch(e.request).then(res => {
         const clone = res.clone();
@@ -35,7 +35,7 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // Cache-first for everything else
+  // Cache-first for other assets
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
