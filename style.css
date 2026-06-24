@@ -1257,6 +1257,76 @@
       font-size: 13px;
     }
 
+    /* === WATER INTAKE === */
+    .water-card {
+      background: linear-gradient(135deg, rgba(78,205,196,0.06), rgba(124,109,240,0.06));
+      border: 1px solid rgba(78,205,196,0.12);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-top: 4px;
+    }
+    .water-params {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .water-param {
+      flex: 1;
+      min-width: 90px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      text-align: center;
+    }
+    .water-param.total {
+      background: rgba(78,205,196,0.06);
+      border-color: rgba(78,205,196,0.15);
+    }
+    .water-param-label {
+      display: block;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      margin-bottom: 4px;
+    }
+    .water-param-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+    }
+    .water-param.total .water-param-value {
+      color: #4ecdc4;
+    }
+    .water-bar {
+      position: relative;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.04);
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .water-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #4ecdc4, #7c6df0);
+      transition: width 0.6s ease;
+    }
+    .water-bar-label {
+      display: block;
+      text-align: center;
+      font-size: 10px;
+      color: rgba(255,255,255,0.15);
+      margin-top: 4px;
+    }
+    .water-note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.25);
+      margin-top: 12px;
+      text-align: center;
+      line-height: 1.5;
+    }
+
     /* Health modal */
     .health-modal {
       display: none;
