@@ -747,24 +747,64 @@
         </p>
       </div>
 
+      <!-- Tech Stack -->
       <div class="about-section">
-        <h2>技术栈</h2>
-        <div class="about-tech-list">
-          <span>HTML / CSS</span>
-          <span>JavaScript</span>
-          <span>D3.js</span>
-          <span>GitHub Pages</span>
+        <h2>🛠️ 技术栈</h2>
+        <div class="tech-grid">
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(255,107,107,0.12)">🌐</span><span class="tech-name">HTML / CSS</span><span class="tech-desc">页面结构与样式</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(240,192,64,0.12)">📜</span><span class="tech-name">JavaScript</span><span class="tech-desc">ES6+ 全站逻辑</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(78,205,196,0.12)">📊</span><span class="tech-name">D3.js</span><span class="tech-desc">力导向图可视化</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(124,109,240,0.12)">⚡</span><span class="tech-name">Service Worker</span><span class="tech-desc">PWA 离线缓存</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(255,159,67,0.12)">💾</span><span class="tech-name">localStorage</span><span class="tech-desc">本地数据持久化</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(78,205,196,0.12)">📱</span><span class="tech-name">PWA</span><span class="tech-desc">可安装 Web App</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(94,94,94,0.2)">🚀</span><span class="tech-name">GitHub Pages</span><span class="tech-desc">静态部署 & CDN</span></div>
+          <div class="tech-card"><span class="tech-icon" style="background:rgba(240,192,64,0.12)">🔤</span><span class="tech-name">Google Fonts</span><span class="tech-desc">Inter 字体</span></div>
         </div>
       </div>
 
+      <!-- Site Stats -->
       <div class="about-section">
-        <h2>说明</h2>
+        <h2>📊 站点统计</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card"><span class="stat-value" id="statSkills">—</span><span class="stat-label">技能节点</span></div>
+          <div class="stat-card"><span class="stat-value" id="statConnections">—</span><span class="stat-label">关联连线</span></div>
+          <div class="stat-card"><span class="stat-value" id="statReflections">—</span><span class="stat-label">个人感悟</span></div>
+          <div class="stat-card"><span class="stat-value" id="statFinance">—</span><span class="stat-label">财务记录</span></div>
+        </div>
+      </div>
+
+      <!-- Changelog -->
+      <div class="about-section">
+        <h2>📋 更新日志</h2>
+        <div class="changelog">
+          <div class="changelog-item">
+            <span class="changelog-badge">v2.0</span>
+            <span class="changelog-date">2026.06.22</span>
+            <span class="changelog-desc">个人感悟升级：卡片式布局、添加/删除、分类标签；新增租房参考板块；SW 网络优先策略</span>
+          </div>
+          <div class="changelog-item">
+            <span class="changelog-badge">v1.1</span>
+            <span class="changelog-date">2026.06.20</span>
+            <span class="changelog-desc">修复访问码编码问题；添加财务账单、食谱健康、研究论文板块</span>
+          </div>
+          <div class="changelog-item">
+            <span class="changelog-badge">v1.0</span>
+            <span class="changelog-date">2026.06.15</span>
+            <span class="changelog-desc">初始版本：能力关系图谱、简历、每日规划、番茄钟</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="about-section">
+        <h2>📌 说明</h2>
         <p>
-          站点采用纯前端实现，所有数据存储在本地。能力图谱中的节点大小代表熟练程度，
-           连线代表技能之间的关联关系。点击节点可查看详细信息。
+          站点采用纯前端实现，所有数据存储在浏览器本地（localStorage），关闭页面不会丢失。
+          能力图谱中的节点大小代表熟练程度，连线代表技能之间的关联关系，点击节点可查看详细信息。
         </p>
       </div>
 
+      <!-- Reflections -->
       <div class="about-section">
         <div class="about-section-header">
           <h2>💭 个人感悟</h2>

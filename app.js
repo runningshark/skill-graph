@@ -1554,7 +1554,26 @@
           let data = loadReflect();
           data = data.filter(d => d.id !== id);
           saveReflect(data);
-          renderReflect();
+    renderReflect();
+
+    // ============================================================
+    // SITE STATS
+    // ============================================================
+    function updateStats() {
+      const el = id => document.getElementById(id);
+      if (el('statSkills')) el('statSkills').textContent = (typeof SKILLS !== 'undefined') ? SKILLS.length : '—';
+      if (el('statConnections')) el('statConnections').textContent = (typeof EDGES !== 'undefined') ? EDGES.length : '—';
+      try {
+        const refs = JSON.parse(localStorage.getItem('km_reflections') || '[]');
+        if (el('statReflections')) el('statReflections').textContent = refs.length;
+      } catch {}
+      try {
+        const fin = JSON.parse(localStorage.getItem('km_finance') || '[]');
+        if (el('statFinance')) el('statFinance').textContent = fin.length;
+      } catch {}
+    }
+    updateStats();
+  
         });
       });
     }
