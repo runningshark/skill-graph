@@ -2732,6 +2732,17 @@
       text-align: center;
       letter-spacing: 0.3px;
     }
+    .housing-subsidy {
+      margin-top: 8px;
+      padding: 10px 16px;
+      background: rgba(80,200,120,0.04);
+      border: 1px solid rgba(80,200,120,0.1);
+      border-radius: 8px;
+      font-size: 13px;
+      color: rgba(80,200,120,0.6);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
     .housing-item {
       background: rgba(255,255,255,0.01);
       border: 1px solid rgba(255,255,255,0.03);
