@@ -2632,6 +2632,24 @@
       color: rgba(240,180,80,0.7);
       font-weight: 500;
     }
+    .finance-quote {
+      margin-top: 24px;
+      padding: 20px 24px;
+      background: rgba(124,109,240,0.04);
+      border: 1px solid rgba(124,109,240,0.12);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .finance-quote-text {
+      font-size: 15px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+    }
+    .finance-quote-text strong {
+      color: rgba(124,109,240,0.8);
+      font-weight: 600;
+    }
     .housing-ref-list { display: flex; flex-direction: column; gap: 6px; }
     .housing-item {
       background: rgba(255,255,255,0.01);
