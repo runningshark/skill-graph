@@ -2667,6 +2667,17 @@
       font-weight: 600;
     }
     .housing-ref-list { display: flex; flex-direction: column; gap: 6px; }
+    .housing-tip {
+      margin-top: 10px;
+      padding: 10px 16px;
+      background: rgba(124,109,240,0.03);
+      border: 1px solid rgba(124,109,240,0.08);
+      border-radius: 8px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
     .housing-item {
       background: rgba(255,255,255,0.01);
       border: 1px solid rgba(255,255,255,0.03);
