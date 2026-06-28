@@ -1608,7 +1608,284 @@
       const data = loadReflect();
       data.push({ id: Date.now(), date, cat, content });
       saveReflect(data);
-      renderReflect();
+    renderReflect();
+
+    // ============================================================
+    // HEALTH - RECIPES
+    // ============================================================
+    const RECIPE_KEY = 'km_recipes';
+
+    function loadRecipes() { try { return JSON.parse(localStorage.getItem(RECIPE_KEY)) || []; } catch { return []; } }
+    function saveRecipes(data) { localStorage.setItem(RECIPE_KEY, JSON.stringify(data)); }
+
+    // Seed 28 default recipes on first load
+    !localStorage.getItem(RECIPE_KEY) && saveRecipes([
+      { id: Date.now()+1, name:'惠灵顿牛排' },{ id: Date.now()+2, name:'番茄肉酱意面' },
+      { id: Date.now()+3, name:'千层面' },{ id: Date.now()+4, name:'勃艮第红酒炖牛肉' },
+      { id: Date.now()+5, name:'奶油玉米浓汤' },{ id: Date.now()+6, name:'凯撒色拉' },
+      { id: Date.now()+7, name:'肉眼牛排' },{ id: Date.now()+8, name:'战斧牛排' },
+      { id: Date.now()+9, name:'西冷牛排' },{ id: Date.now()+10, name:'黑松露炒饭' },
+      { id: Date.now()+11, name:'烟熏三文鱼' },{ id: Date.now()+12, name:'法式蛋卷' },
+      { id: Date.now()+13, name:'香煎龙利' },{ id: Date.now()+14, name:'炸鱼排' },
+      { id: Date.now()+15, name:'法兰克福香肠' },{ id: Date.now()+16, name:'马铃薯千层派' },
+      { id: Date.now()+17, name:'卡酥来砂锅' },{ id: Date.now()+18, name:'伊比利亚火腿' },
+      { id: Date.now()+19, name:'塔帕斯' },{ id: Date.now()+20, name:'维也纳炸猪排' },
+      { id: Date.now()+21, name:'瑞士芝士火锅' },{ id: Date.now()+22, name:'烤鸭胸' },
+      { id: Date.now()+23, name:'法式洋葱汤' },{ id: Date.now()+24, name:'洛林咸塔' },
+      { id: Date.now()+25, name:'火腿奶油球' },{ id: Date.now()+26, name:'香草凤尾虾' },
+      { id: Date.now()+27, name:'香脆薯格' },{ id: Date.now()+28, name:'罗宋汤' },
+    ]);
+
+    function renderRecipes() {
+      const list = document.getElementById('recipeList');
+      if (!list) return;
+      const data = loadRecipes();
+      if (data.length === 0) { list.innerHTML = '<span class="recipe-tag" style="opacity:0.3">暂无菜谱</span>'; return; }
+      list.innerHTML = data.map(r => `<span class="recipe-tag">${r.name}</span>`).join('');
+    }
+
+    function openRecipeModal() {
+      const modal = document.getElementById('recipeModal');
+      if (!modal) return;
+      modal.classList.add('open');
+      document.getElementById('recipeName').value = '';
+      document.getElementById('recipeIngredients').value = '';
+      document.getElementById('recipeSteps').value = '';
+      document.getElementById('recipeNote').value = '';
+      document.getElementById('recipeId').value = '';
+      setTimeout(() => document.getElementById('recipeName')?.focus(), 100);
+    }
+
+    function closeRecipeModal() { document.getElementById('recipeModal')?.classList.remove('open'); }
+    document.getElementById('recipeModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeRecipeModal(); });
+
+    function saveRecipe() {
+      const name = document.getElementById('recipeName')?.value?.trim();
+      if (!name) return;
+      const ingredients = document.getElementById('recipeIngredients')?.value?.trim() || '';
+      const steps = document.getElementById('recipeSteps')?.value?.trim() || '';
+      const note = document.getElementById('recipeNote')?.value?.trim() || '';
+      const data = loadRecipes();
+      data.push({ id: Date.now(), name, ingredients, steps, note });
+      saveRecipes(data);
+      renderRecipes();
+      closeRecipeModal();
+    }
+
+    // ============================================================
+    // HEALTH - BODY FAT
+    // ============================================================
+    const BODYFAT_KEY = 'km_bodyfat';
+
+    function loadBodyfat() { try { return JSON.parse(localStorage.getItem(BODYFAT_KEY)) || []; } catch { return []; } }
+    function saveBodyfat(data) { localStorage.setItem(BODYFAT_KEY, JSON.stringify(data)); }
+    !localStorage.getItem(BODYFAT_KEY) && saveBodyfat([]);
+
+    function renderBodyfat() {
+      const list = document.getElementById('bodyfatList');
+      if (!list) return;
+      const data = loadBodyfat();
+      const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      if (sorted.length === 0) { list.innerHTML = '<div class="bodyfat-empty" style="opacity:0.3;font-size:13px">暂无记录</div>'; return; }
+      list.innerHTML = sorted.map(r => `
+        <div class="bodyfat-item" style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div>
+            <span style="color:rgba(255,255,255,0.6);font-size:12px">${r.date}</span>
+            <span style="margin-left:12px;font-weight:600">${r.value}%</span>
+            ${r.note ? `<span style="margin-left:8px;color:rgba(255,255,255,0.3);font-size:12px">${r.note}</span>` : ''}
+          </div>
+          <button class="bf-del" data-id="${r.id}" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px">✕</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.bf-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          let data = loadBodyfat();
+          data = data.filter(d => d.id !== Number(btn.dataset.id));
+          saveBodyfat(data);
+          renderBodyfat();
+        });
+      });
+    }
+
+    function openBodyfatModal() {
+      const modal = document.getElementById('bodyfatModal');
+      if (!modal) return;
+      modal.classList.add('open');
+      const d = new Date();
+      document.getElementById('bfDate').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      document.getElementById('bfValue').value = '';
+      document.getElementById('bfNote').value = '';
+      setTimeout(() => document.getElementById('bfValue')?.focus(), 100);
+    }
+
+    function closeBodyfatModal() { document.getElementById('bodyfatModal')?.classList.remove('open'); }
+    document.getElementById('bodyfatModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeBodyfatModal(); });
+
+    function saveBodyfat() {
+      const date = document.getElementById('bfDate')?.value;
+      const value = parseFloat(document.getElementById('bfValue')?.value);
+      if (!date || isNaN(value)) return;
+      const note = document.getElementById('bfNote')?.value?.trim() || '';
+      const data = loadBodyfat();
+      data.push({ id: Date.now(), date, value, note });
+      saveBodyfat(data);
+      renderBodyfat();
+      closeBodyfatModal();
+    }
+
+    // ============================================================
+    // HEALTH - BODY STATUS
+    // ============================================================
+    const BODYSTATUS_KEY = 'km_bodystatus';
+
+    function loadBodyStatus() { try { return JSON.parse(localStorage.getItem(BODYSTATUS_KEY)) || []; } catch { return []; } }
+    function saveBodyStatus(data) { localStorage.setItem(BODYSTATUS_KEY, JSON.stringify(data)); }
+    !localStorage.getItem(BODYSTATUS_KEY) && saveBodyStatus([]);
+
+    function renderBodyStatus() {
+      const list = document.getElementById('bodyStatusList');
+      if (!list) return;
+      const data = loadBodyStatus();
+      const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      if (sorted.length === 0) { list.innerHTML = '<div style="opacity:0.3;font-size:13px">暂无记录</div>'; return; }
+      const eLabels = ['','😩 差','😐 一般','🙂 不错','😊 好','🔥 充沛'];
+      list.innerHTML = sorted.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div>
+            <span style="color:rgba(255,255,255,0.6);font-size:12px">${r.date}</span>
+            ${r.weight ? `<span style="margin-left:10px">${r.weight}kg</span>` : ''}
+            ${r.sleep ? `<span style="margin-left:10px;color:rgba(255,255,255,0.4)">🛌${r.sleep}h</span>` : ''}
+            ${r.energy ? `<span style="margin-left:6px">${eLabels[r.energy] || ''}</span>` : ''}
+            ${r.exercise ? `<span style="margin-left:8px;color:rgba(255,255,255,0.3);font-size:12px">🏃${r.exercise}</span>` : ''}
+            ${r.note ? `<span style="margin-left:6px;color:rgba(255,255,255,0.2);font-size:11px">${r.note}</span>` : ''}
+          </div>
+          <button class="bs-del" data-id="${r.id}" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px">✕</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.bs-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          let data = loadBodyStatus();
+          data = data.filter(d => d.id !== Number(btn.dataset.id));
+          saveBodyStatus(data);
+          renderBodyStatus();
+        });
+      });
+    }
+
+    function openBodyStatusModal() {
+      const modal = document.getElementById('bodyStatusModal');
+      if (!modal) return;
+      modal.classList.add('open');
+      const d = new Date();
+      document.getElementById('bsDate').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      document.getElementById('bsWeight').value = '';
+      document.getElementById('bsSleep').value = '';
+      document.querySelectorAll('.bs-energy-btn').forEach(b => b.classList.toggle('active', b.dataset.val === '3'));
+      document.getElementById('bsEnergy').value = '3';
+      document.getElementById('bsExercise').value = '';
+      document.getElementById('bsNote').value = '';
+      setTimeout(() => document.getElementById('bsWeight')?.focus(), 100);
+    }
+
+    function closeBodyStatusModal() { document.getElementById('bodyStatusModal')?.classList.remove('open'); }
+    document.getElementById('bodyStatusModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeBodyStatusModal(); });
+
+    // Energy button selection
+    document.getElementById('bsEnergyGroup')?.addEventListener('click', e => {
+      const btn = e.target.closest('.bs-energy-btn');
+      if (!btn) return;
+      document.querySelectorAll('.bs-energy-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('bsEnergy').value = btn.dataset.val;
+    });
+
+    function saveBodyStatus() {
+      const date = document.getElementById('bsDate')?.value;
+      if (!date) return;
+      const weight = parseFloat(document.getElementById('bsWeight')?.value) || null;
+      const sleep = parseFloat(document.getElementById('bsSleep')?.value) || null;
+      const energy = parseInt(document.getElementById('bsEnergy')?.value) || 3;
+      const exercise = document.getElementById('bsExercise')?.value?.trim() || '';
+      const note = document.getElementById('bsNote')?.value?.trim() || '';
+      const data = loadBodyStatus();
+      data.push({ id: Date.now(), date, weight, sleep, energy, exercise, note });
+      saveBodyStatus(data);
+      renderBodyStatus();
+      closeBodyStatusModal();
+    }
+
+    // ============================================================
+    // HEALTH - SKIN CONDITION
+    // ============================================================
+    const SKIN_KEY = 'km_skin';
+
+    function loadSkin() { try { return JSON.parse(localStorage.getItem(SKIN_KEY)) || []; } catch { return []; } }
+    function saveSkin(data) { localStorage.setItem(SKIN_KEY, JSON.stringify(data)); }
+    !localStorage.getItem(SKIN_KEY) && saveSkin([]);
+
+    function renderSkin() {
+      const list = document.getElementById('skinList');
+      if (!list) return;
+      const data = loadSkin();
+      const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+      if (sorted.length === 0) { list.innerHTML = '<div style="opacity:0.3;font-size:13px">暂无记录</div>'; return; }
+      const cLabels = { good:'😊 好', normal:'🙂 一般', bad:'😟 差', acne:'🔴 长痘', dry:'🏜️ 干燥', oily:'💧 出油' };
+      list.innerHTML = sorted.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;margin-bottom:6px;background:rgba(255,255,255,0.04);border-radius:8px">
+          <div>
+            <span style="color:rgba(255,255,255,0.6);font-size:12px">${r.date}</span>
+            <span style="margin-left:10px">${cLabels[r.condition] || r.condition}</span>
+            ${r.products ? `<span style="margin-left:8px;color:rgba(255,255,255,0.3);font-size:12px">${r.products}</span>` : ''}
+            ${r.note ? `<span style="margin-left:6px;color:rgba(255,255,255,0.2);font-size:11px">${r.note}</span>` : ''}
+          </div>
+          <button class="sk-del" data-id="${r.id}" style="background:none;border:none;color:rgba(255,255,255,0.2);cursor:pointer;font-size:12px">✕</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.sk-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          let data = loadSkin();
+          data = data.filter(d => d.id !== Number(btn.dataset.id));
+          saveSkin(data);
+          renderSkin();
+        });
+      });
+    }
+
+    function openSkinModal() {
+      const modal = document.getElementById('skinModal');
+      if (!modal) return;
+      modal.classList.add('open');
+      const d = new Date();
+      document.getElementById('skDate').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      document.getElementById('skCondition').value = 'normal';
+      document.getElementById('skProducts').value = '';
+      document.getElementById('skNote').value = '';
+      setTimeout(() => document.getElementById('skCondition')?.focus(), 100);
+    }
+
+    function closeSkinModal() { document.getElementById('skinModal')?.classList.remove('open'); }
+    document.getElementById('skinModal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeSkinModal(); });
+
+    function saveSkin() {
+      const date = document.getElementById('skDate')?.value;
+      if (!date) return;
+      const condition = document.getElementById('skCondition')?.value || 'normal';
+      const products = document.getElementById('skProducts')?.value?.trim() || '';
+      const note = document.getElementById('skNote')?.value?.trim() || '';
+      const data = loadSkin();
+      data.push({ id: Date.now(), date, condition, products, note });
+      saveSkin(data);
+      renderSkin();
+      closeSkinModal();
+    }
+
+    // ============================================================
+    // HEALTH - INIT RENDER
+    // ============================================================
+    renderRecipes();
+    renderBodyfat();
+    renderBodyStatus();
+    renderSkin();
       reflModal?.classList.remove('open');
     });
     reflModal?.addEventListener('click', e => { if (e.target === reflModal) reflModal.classList.remove('open'); });

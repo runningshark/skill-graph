@@ -1,4 +1,4 @@
-const CACHE = 'km-cache-v3';
+const CACHE = 'km-cache-v4';
 const URLS = [
   '/skill-graph/',
   '/skill-graph/index.html',
