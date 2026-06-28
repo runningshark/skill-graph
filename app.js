@@ -610,6 +610,240 @@
     console.log('✦ KM loaded —', nodes.length, 'skills,', links.length, 'connections');
 
     // ============================================================
+    // POMODORO TIMER
+    // ============================================================
+    const POMO_KEY = 'km_pomo_stats';
+    let pomoState = {
+      mode: 'focus',     // 'focus' | 'break'
+      running: false,
+      remaining: 25 * 60, // seconds
+      focusTime: 25,
+      breakTime: 5,
+      timer: null,
+      completed: 0,
+    };
+
+    function loadPomoStats() {
+      try { return JSON.parse(localStorage.getItem(POMO_KEY)) || { sessions:0, totalSeconds:0, streak:0, bestStreak:0, dates:{} }; }
+      catch { return { sessions:0, totalSeconds:0, streak:0, bestStreak:0, dates:{} }; }
+    }
+    function savePomoStats(stats) { localStorage.setItem(POMO_KEY, JSON.stringify(stats)); }
+
+    function updatePomoDisplay() {
+      const el = document.getElementById('pomodoroDisplay');
+      if (!el) return;
+      const m = Math.floor(pomoState.remaining / 60);
+      const s = pomoState.remaining % 60;
+      el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function updatePomoModeUI() {
+      document.getElementById('modeFocus')?.classList.toggle('active', pomoState.mode === 'focus');
+      document.getElementById('modeBreak')?.classList.toggle('active', pomoState.mode === 'break');
+    }
+
+    function updatePomoButtons() {
+      const startBtn = document.getElementById('pomoStart');
+      const pauseBtn = document.getElementById('pomoPause');
+      if (startBtn) startBtn.disabled = pomoState.running;
+      if (pauseBtn) pauseBtn.disabled = !pomoState.running;
+    }
+
+    function setPomoRemaining() {
+      if (pomoState.mode === 'focus') {
+        pomoState.remaining = pomoState.focusTime * 60;
+      } else {
+        pomoState.remaining = pomoState.breakTime * 60;
+      }
+      updatePomoDisplay();
+    }
+
+    function pomoTick() {
+      if (!pomoState.running) return;
+      pomoState.remaining--;
+      updatePomoDisplay();
+
+      if (pomoState.remaining <= 0) {
+        // Session complete
+        pomoState.running = false;
+        clearInterval(pomoState.timer);
+        pomoState.timer = null;
+        updatePomoButtons();
+
+        if (pomoState.mode === 'focus') {
+          // Completed a focus session
+          pomoState.completed++;
+          const completedEl = document.getElementById('pomoCompleted');
+          if (completedEl) completedEl.textContent = pomoState.completed;
+
+          const stats = loadPomoStats();
+          stats.sessions++;
+          stats.totalSeconds += pomoState.focusTime * 60;
+          const today = new Date().toISOString().slice(0,10);
+          stats.dates[today] = (stats.dates[today] || 0) + pomoState.focusTime * 60;
+          stats.streak++;
+          if (stats.streak > stats.bestStreak) stats.bestStreak = stats.streak;
+          savePomoStats(stats);
+          renderPomoStats();
+
+          // Auto-switch to break
+          pomoState.mode = 'break';
+          setPomoRemaining();
+          updatePomoModeUI();
+          // Auto-start break
+          pomoState.running = true;
+          pomoState.timer = setInterval(pomoTick, 1000);
+          updatePomoButtons();
+        } else {
+          // Break finished - switch back to focus
+          pomoState.mode = 'focus';
+          setPomoRemaining();
+          updatePomoModeUI();
+        }
+      }
+    }
+
+    function startPomo() {
+      if (pomoState.running) return;
+      pomoState.running = true;
+      pomoState.timer = setInterval(pomoTick, 1000);
+      updatePomoButtons();
+    }
+
+    function pausePomo() {
+      if (!pomoState.running) return;
+      pomoState.running = false;
+      clearInterval(pomoState.timer);
+      pomoState.timer = null;
+      updatePomoButtons();
+    }
+
+    function resetPomo() {
+      pausePomo();
+      // Reset to focus mode
+      pomoState.mode = 'focus';
+      pomoState.focusTime = parseInt(document.getElementById('pomoFocusTime')?.value) || 25;
+      pomoState.breakTime = parseInt(document.getElementById('pomoBreakTime')?.value) || 5;
+      setPomoRemaining();
+      updatePomoModeUI();
+      pomoState.completed = 0;
+      const completedEl = document.getElementById('pomoCompleted');
+      if (completedEl) completedEl.textContent = '0';
+    }
+
+    function switchPomoMode(mode) {
+      if (pomoState.running) return; // Don't switch while running
+      pomoState.mode = mode;
+      setPomoRemaining();
+      updatePomoModeUI();
+    }
+
+    function renderPomoStats() {
+      const stats = loadPomoStats();
+      const sessionsEl = document.getElementById('pomoStatSessions');
+      const hoursEl = document.getElementById('pomoStatHours');
+      const streakEl = document.getElementById('pomoStatStreak');
+      const bestEl = document.getElementById('pomoStatBest');
+      if (sessionsEl) sessionsEl.textContent = stats.sessions;
+      if (hoursEl) hoursEl.textContent = (stats.totalSeconds / 3600).toFixed(1) + 'h';
+      if (streakEl) streakEl.textContent = stats.streak;
+      if (bestEl) bestEl.textContent = stats.bestStreak;
+
+      // Monthly chart
+      const chart = document.getElementById('pomoMonthlyChart');
+      if (!chart) return;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      let html = '<div style="display:flex;gap:3px;align-items:flex-end;height:60px;padding:10px 0">';
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const secs = stats.dates[dateStr] || 0;
+        const h = Math.min(100, (secs / (25*60)) * 100); // 1 pomodoro = 100%
+        const isToday = dateStr === now.toISOString().slice(0,10);
+        html += `<div style="flex:1;height:${h}%;background:${isToday?'rgba(124,109,240,0.8)':'rgba(124,109,240,0.3)'};border-radius:3px 3px 0 0;min-height:${secs>0?'4px':'2px'}" title="${dateStr}: ${Math.round(secs/60)}min"></div>`;
+      }
+      html += '</div>';
+      chart.innerHTML = html;
+    }
+
+    function renderPomoCycle() {
+      const cycle = document.getElementById('pomoCycle');
+      if (!cycle) return;
+      const completed = pomoState.completed;
+      const total = 4; // 4 pomodoros per cycle
+      let html = '<div style="display:flex;gap:8px;justify-content:center;padding:8px 0">';
+      for (let i = 0; i < total; i++) {
+        const done = i < completed;
+        html += `<div style="width:24px;height:24px;border-radius:50%;background:${done?'rgba(78,205,196,0.6)':'rgba(255,255,255,0.08)'};display:flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.3s">${done?'✓':(i+1)}</div>`;
+        if (i < total - 1) {
+          html += `<div style="width:20px;height:2px;align-self:center;background:${i < completed ? 'rgba(78,205,196,0.4)' : 'rgba(255,255,255,0.06)'}"></div>`;
+        }
+      }
+      html += '</div>';
+      cycle.innerHTML = html;
+    }
+
+    // --- Init Pomo ---
+    (function initPomo() {
+      const startBtn = document.getElementById('pomoStart');
+      const pauseBtn = document.getElementById('pomoPause');
+      const resetBtn = document.getElementById('pomoReset');
+      const modeFocus = document.getElementById('modeFocus');
+      const modeBreak = document.getElementById('modeBreak');
+      const focusInput = document.getElementById('pomoFocusTime');
+      const breakInput = document.getElementById('pomoBreakTime');
+
+      // Load settings
+      const savedFocus = localStorage.getItem('pomo_focus_time');
+      const savedBreak = localStorage.getItem('pomo_break_time');
+      if (savedFocus && focusInput) focusInput.value = savedFocus;
+      if (savedBreak && breakInput) breakInput.value = savedBreak;
+
+      pomoState.focusTime = parseInt(focusInput?.value) || 25;
+      pomoState.breakTime = parseInt(breakInput?.value) || 5;
+      setPomoRemaining();
+      updatePomoModeUI();
+
+      if (startBtn) startBtn.addEventListener('click', startPomo);
+      if (pauseBtn) pauseBtn.addEventListener('click', pausePomo);
+      if (resetBtn) resetBtn.addEventListener('click', resetPomo);
+
+      if (modeFocus) modeFocus.addEventListener('click', () => switchPomoMode('focus'));
+      if (modeBreak) modeBreak.addEventListener('click', () => switchPomoMode('break'));
+
+      if (focusInput) focusInput.addEventListener('change', () => {
+        const v = parseInt(focusInput.value) || 25;
+        pomoState.focusTime = v;
+        localStorage.setItem('pomo_focus_time', v);
+        if (!pomoState.running && pomoState.mode === 'focus') setPomoRemaining();
+      });
+
+      if (breakInput) breakInput.addEventListener('change', () => {
+        const v = parseInt(breakInput.value) || 5;
+        pomoState.breakTime = v;
+        localStorage.setItem('pomo_break_time', v);
+        if (!pomoState.running && pomoState.mode === 'break') setPomoRemaining();
+      });
+
+      renderPomoStats();
+      renderPomoCycle();
+
+      // Update stats when switching to utilities page
+      const utilTab = document.querySelector('.nav-tab[data-page="utilities"]');
+      if (utilTab) {
+        utilTab.addEventListener('click', () => {
+          setTimeout(() => {
+            renderPomoStats();
+            renderPomoCycle();
+            updatePomoDisplay();
+          }, 50);
+        });
+      }
+    })();
+
+    // ============================================================
     // DAILY PLANNER
     // ============================================================
 
