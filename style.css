@@ -576,6 +576,22 @@
       color: rgba(255,255,255,0.15);
       text-align: center;
     }
+    .home-motivation {
+      margin: 48px auto 0;
+      max-width: 480px;
+      text-align: center;
+      font-size: 15px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.8;
+      padding: 24px 20px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      letter-spacing: 0.5px;
+    }
+    .home-motivation strong {
+      color: rgba(240,180,80,0.7);
+      font-weight: 600;
+    }
 
     /* === CAREER INFO CARDS (就业参考) === */
     .career-info-grid {
