@@ -1531,6 +1531,94 @@
     }
     .paper-links a:hover { color: #7c6df0; }
 
+    /* === DOUYIN ANALYSIS === */
+    .analysis-section {
+      margin-top: 56px;
+      padding-top: 36px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .analysis-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .analysis-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.75);
+    }
+    .analysis-date {
+      font-size: 11px;
+      color: rgba(255,255,255,0.15);
+    }
+    .analysis-summary {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .analysis-card {
+      padding: 18px 20px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.01);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: all 0.25s ease;
+    }
+    .analysis-card:hover {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
+    }
+    .analysis-card.refs {
+      grid-column: 1 / -1;
+      background: rgba(124,109,240,0.04);
+      border-color: rgba(124,109,240,0.08);
+    }
+    .analysis-card-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+    .analysis-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 8px;
+    }
+    .analysis-card-body {
+      font-size: 12px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.4);
+    }
+    .analysis-card-body strong {
+      color: rgba(255,255,255,0.6);
+    }
+    .analysis-card-body em {
+      color: rgba(255,255,255,0.3);
+    }
+    .analysis-card-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .analysis-card-tags span {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.2);
+    }
+
+    @media (max-width: 640px) {
+      .analysis-grid { grid-template-columns: 1fr; }
+    }
+
     /* === RESEARCH PROGRESS === */
     .research-progress {
       margin-top: 56px;
