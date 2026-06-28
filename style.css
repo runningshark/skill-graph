@@ -592,6 +592,36 @@
       color: rgba(240,180,80,0.7);
       font-weight: 600;
     }
+    .home-philosophy {
+      margin: 48px auto 0;
+      max-width: 480px;
+      padding: 24px 20px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .phil-row {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 7px 0;
+    }
+    .phil-row + .phil-row {
+      border-top: 1px solid rgba(255,255,255,0.02);
+    }
+    .phil-label {
+      flex-shrink: 0;
+      width: 40px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 1px;
+    }
+    .phil-items {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+    }
 
     /* === CAREER INFO CARDS (就业参考) === */
     .career-info-grid {
