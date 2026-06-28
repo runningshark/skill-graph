@@ -1141,6 +1141,23 @@
       border-color: rgba(255,255,255,0.1);
       color: rgba(255,255,255,0.7);
     }
+    .health-exercise {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      background: rgba(240,120,80,0.04);
+      border: 1px solid rgba(240,120,80,0.12);
+      border-radius: 10px;
+      margin-bottom: 28px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.5);
+    }
+    .health-exercise-icon { font-size: 18px; }
+    .health-exercise-text strong {
+      color: rgba(240,120,80,0.7);
+      font-weight: 600;
+    }
     .health-section-header {
       display: flex;
       align-items: center;
